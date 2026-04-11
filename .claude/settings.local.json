@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"C:/Users/LN/Project/Personal/BDS/.claude/skills/bds-scraper/scripts\" \"C:/Users/LN/Project/Personal/BDS/.claude/skills/bds-scraper/references\" \"C:/Users/LN/Project/Personal/BDS/.claude/skills/bds-scraper/assets\" \"C:/Users/LN/Project/Personal/BDS/.claude/skills/bds-scraper/evals\")",
+      "Bash(cp \"C:/Users/LN/Project/Personal/BDS/bds-scraper-extracted/bds-scraper/references/bds_url_guide.md\" \"C:/Users/LN/Project/Personal/BDS/.claude/skills/bds-scraper/references/\")",
+      "Bash(cp \"C:/Users/LN/Project/Personal/BDS/bds-scraper-extracted/bds-scraper/references/tphcm_districts.json\" \"C:/Users/LN/Project/Personal/BDS/.claude/skills/bds-scraper/references/\")",
+      "Bash(cp \"C:/Users/LN/Project/Personal/BDS/bds-scraper-extracted/bds-scraper/scripts/generate_excel.py\" \"C:/Users/LN/Project/Personal/BDS/.claude/skills/bds-scraper/scripts/\")",
+      "Bash(cp \"C:/Users/LN/Project/Personal/BDS/bds-scraper-extracted/bds-scraper/assets/map_template.html\" \"C:/Users/LN/Project/Personal/BDS/.claude/skills/bds-scraper/assets/\")",
+      "Bash(rm \"C:/Users/LN/Project/Personal/BDS/.claude/skills/bds-scraper/bds-scraper.zip\")",
+      "Bash(python \"C:/Users/LN/.claude/skills/skill-creator/scripts/package_skill.py\" \"C:/Users/LN/Project/Personal/BDS/.claude/skills/bds-scraper\")"
+    ]
+  }
+}

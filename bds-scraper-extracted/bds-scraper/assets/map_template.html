@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{{TITLE}}</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif}
+#map{position:absolute;top:0;left:0;right:320px;bottom:0}
+#panel{position:absolute;top:0;right:0;width:320px;bottom:0;background:#fff;overflow-y:auto;box-shadow:-2px 0 8px rgba(0,0,0,.15);z-index:1000}
+.ph{background:linear-gradient(135deg,#2E86AB,#1a5c7a);color:#fff;padding:14px;text-align:center}
+.ph h2{font-size:15px;margin-bottom:3px}.ph p{font-size:11px;opacity:.85}
+.filters{padding:8px 12px;display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #eee}
+.filters button{padding:5px 8px;border:1.5px solid #ddd;border-radius:5px;background:#fff;cursor:pointer;font-size:10px;font-weight:600;transition:all .2s}
+.filters button.active{border-color:#2E86AB;background:#E8F4FD;color:#2E86AB}
+.filters button:hover{border-color:#2E86AB}
+.pi{padding:10px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .2s}
+.pi:hover{background:#f5f9fc}.pi.hidden{display:none}
+.pn{font-weight:600;font-size:13px;color:#1a1a1a}
+.pf{font-size:11px;color:#666;margin-top:2px}.pp{color:#e74c3c;font-weight:600}
+.badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600;margin-left:4px}
+@media(max-width:768px){#map{right:0;bottom:45%}#panel{top:55%;width:100%}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="panel">
+<div class="ph"><h2>{{TITLE}}</h2><p>{{SUBTITLE}}</p></div>
+<div class="filters" id="filters"></div>
+<div id="plist"></div>
+</div>
+<script>
+// ===== DISTRICT DATA =====
+// Replace {{DISTRICTS_JSON}} with the districts object from tphcm_districts.json
+var districts = {{DISTRICTS_JSON}};
+
+// ===== DISTRICT COLORS =====
+var dColors = {{COLORS_JSON}};
+
+// ===== PROJECT DATA =====
+// Replace {{PROJECTS_JSON}} with array of project objects
+// Each: {name, lat, lng, price, area, beds, addr, district, note, link}
+var projects = {{PROJECTS_JSON}};
+
+// ===== BADGE STYLES =====
+// Generate badge CSS dynamically based on districts in projects
+var districtKeys = [...new Set(projects.map(p => p.district))];
+var badgeCSS = districtKeys.map((d, i) => {
+    var colors = ['#3498db','#e67e22','#2ecc71','#9b59b6','#e74c3c','#1abc9c','#f39c12','#795548'];
+    var c = colors[i % colors.length];
+    return '.badge-' + d + '{background:' + c + '22;color:' + c + '}';
+}).join('\n');
+var styleEl = document.createElement('style');
+styleEl.textContent = badgeCSS;
+document.head.appendChild(styleEl);
+
+// ===== MAP INITIALIZATION =====
+var map = L.map('map').setView([10.78,106.66],12);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles &copy; Esri',maxZoom:19}).addTo(map);
+
+// Draw district polygons
+var polys = {};
+for(var dn in districts){
+    var c = dColors[dn] || '#999';
+    polys[dn] = L.polygon(districts[dn],{color:c,weight:2,dashArray:'6,4',fillColor:c,fillOpacity:0.08}).addTo(map);
+    var cn = polys[dn].getBounds().getCenter();
+    L.marker(cn,{icon:L.divIcon({className:'dl',html:'<div style="font-size:11px;font-weight:700;color:'+c+';text-shadow:1px 1px 2px white,-1px -1px 2px white,1px -1px 2px white,-1px 1px 2px white;white-space:nowrap">'+dn+'</div>',iconSize:[80,15],iconAnchor:[40,7]})}).addTo(map);
+}
+
+// ===== FILTER BUTTONS =====
+var fEl = document.getElementById('filters');
+var btnAll = document.createElement('button');
+btnAll.textContent = 'Tat ca';
+btnAll.className = 'active';
+btnAll.onclick = function(){filterD('all')};
+fEl.appendChild(btnAll);
+
+// Create filter button for each district in projects
+districtKeys.forEach(function(d) {
+    var btn = document.createElement('button');
+    btn.textContent = d.toUpperCase();
+    btn.onclick = function(){filterD(d)};
+    fEl.appendChild(btn);
+});
+
+// ===== MARKERS & LIST =====
+var markers = [];
+var listEl = document.getElementById('plist');
+projects.forEach(function(p,i){
+    var dIdx = districtKeys.indexOf(p.district);
+    var colors = ['#3498db','#e67e22','#2ecc71','#9b59b6','#e74c3c','#1abc9c','#f39c12','#795548'];
+    var color = colors[dIdx % colors.length];
+    var bg = color;
+    var icon = L.divIcon({className:'cm',html:'<div style="background:'+color+';color:white;border:2px solid '+bg+';border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,.3)">'+String(i+1)+'</div>',iconSize:[26,26],iconAnchor:[13,13]});
+    var mk = L.marker([p.lat,p.lng],{icon:icon}).addTo(map);
+    var popupHtml = '<div style="min-width:200px"><h3 style="margin:0 0 5px;font-size:14px">'+String(i+1)+'. '+p.name+'</h3><div style="font-size:12px;line-height:1.5"><b style="color:#e74c3c">'+p.price+'</b><br>'+p.area+' | '+p.beds+' PN<br>'+p.addr+'<br>'+p.note;
+    if(p.link) popupHtml += '<br><a href="'+p.link+'" target="_blank" style="color:#0563C1">Xem BDS</a>';
+    popupHtml += '</div></div>';
+    mk.bindPopup(popupHtml);
+    markers.push({mk:mk,data:p});
+
+    var div = document.createElement('div');
+    div.className = 'pi';
+    div.dataset.district = p.district;
+    div.innerHTML = '<div class="pn">'+String(i+1)+'. '+p.name+'<span class="badge badge-'+p.district+'">'+p.district.toUpperCase()+'</span></div><div class="pf"><span class="pp">'+p.price+'</span> - '+p.area+'</div><div class="pf">'+p.addr+'</div>';
+    div.onclick = (function(lt,ln,m){return function(){map.setView([lt,ln],17);m.openPopup()}})(p.lat,p.lng,mk);
+    listEl.appendChild(div);
+});
+
+// ===== FILTER FUNCTION =====
+function filterD(d){
+    document.querySelectorAll('.filters button').forEach(function(b){b.classList.remove('active')});
+    event.target.classList.add('active');
+    document.querySelectorAll('.pi').forEach(function(el){el.classList.toggle('hidden',d!=='all'&&el.dataset.district!==d)});
+    markers.forEach(function(m){if(d==='all'||m.data.district===d)m.mk.addTo(map);else map.removeLayer(m.mk)});
+
+    // Find matching district polygon to zoom
+    if(d !== 'all') {
+        // Try to find matching polygon
+        for(var pn in polys) {
+            if(pn.toLowerCase().replace(/[^a-z0-9]/g,'').includes(d.toLowerCase().replace(/[^a-z0-9]/g,''))) {
+                map.fitBounds(polys[pn].getBounds().pad(0.1));
+                return;
+            }
+        }
+        // Fallback: fit to filtered markers
+        var filtered = markers.filter(function(m){return m.data.district===d});
+        if(filtered.length) {
+            var bounds = filtered.map(function(m){return[m.data.lat,m.data.lng]});
+            map.fitBounds(bounds,{padding:[30,30]});
+        }
+    } else {
+        var ac = markers.map(function(m){return[m.data.lat,m.data.lng]});
+        map.fitBounds(ac,{padding:[30,30]});
+    }
+}
+
+// Initial view: fit all markers
+var ac = markers.map(function(m){return[m.data.lat,m.data.lng]});
+map.fitBounds(ac,{padding:[30,30]});
+</script>
+</body>
+</html>

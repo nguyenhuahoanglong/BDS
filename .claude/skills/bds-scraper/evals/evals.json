@@ -1,0 +1,44 @@
+{
+  "skill_name": "bds-scraper",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Tìm chung cư Quận 8 TPHCM, giá 3-5 tỷ, 2-3 phòng ngủ. Xuất ra file Excel và bản đồ HTML tương tác.",
+      "expected_output": "A two-file deliverable: (1) an xlsx listing with headers Du An/Loai/Khoang Gia/Dien Tich/Phong Ngu/WC/Dia Chi/Quan/Ghi Chu/Link BDS, and (2) a self-contained HTML map rendering numbered markers over TPHCM district polygons.",
+      "expectations": [
+        "Skill activates and reads SKILL.md",
+        "Uses scripts/build_search_url.py (or emits a URL matching https://batdongsan.com.vn/ban-can-ho-chung-cu-quan-8?gia_tu=3000&gia_den=5000)",
+        "Scrapes with Chrome browser tool (mcp__claude-in-chrome__*), not curl or fetch",
+        "Resolves lat/lng for every project (no zeros, all within TPHCM bounding box)",
+        "Runs scripts/generate_excel.py to produce the xlsx",
+        "Runs scripts/generate_map.py (NOT bash heredoc) to produce the HTML",
+        "Generated HTML starts with literal '<!DOCTYPE html>' (not '<\\!DOCTYPE html>')",
+        "Collects 15-30 unique projects, deduped by name"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Có dự án nào tốt ở Thủ Đức không? Tôi muốn mua nhà phố dưới 10 tỷ.",
+      "expected_output": "Skill triggers on a casual Vietnamese query, interviews for missing criteria if needed, then runs the full scrape → Excel → map workflow scoped to Thu Duc with nha-rieng type and price<=10000 triệu.",
+      "expectations": [
+        "Skill activates on casual phrasing ('có dự án nào tốt')",
+        "Recognizes 'nhà phố' maps to --type nha-rieng and 'Thủ Đức' maps to --district thu-duc",
+        "Encodes 'dưới 10 tỷ' as gia_den=10000 with no gia_tu",
+        "Uses scripts/generate_map.py so the HTML DOCTYPE is intact",
+        "Districts in output listings use canonical key 'Thu Duc' (no diacritics)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "So sánh giá chung cư giữa Quận 7 và Quận 2. Output folder: C:/Users/LN/Downloads",
+      "expected_output": "Merged dataset covering both districts with a single combined Excel + map. Map shows markers across both district polygons; side panel has separate filter buttons for Q.7 and Q.2 (Thu Duc).",
+      "expectations": [
+        "Scrapes batdongsan.com.vn for both districts (two URLs via build_search_url.py)",
+        "Combines results into one projects JSON array",
+        "Deliverables land under C:/Users/LN/Downloads",
+        "Map side panel filter buttons include both districts",
+        "validate_projects.py would pass on the input (if invoked)"
+      ]
+    }
+  ]
+}
