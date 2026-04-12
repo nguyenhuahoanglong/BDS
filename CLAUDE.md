@@ -34,13 +34,13 @@ polygons, JSON schema, and a Leaflet template that scripts consume.
 | `output/projects.json` | Latest scraped+enriched listings (scripts' input) |
 | `output/projects_raw.json` | Pre-enrichment scrape output |
 | `chung_cu_*.xlsx` | Generated Excel deliverables |
-| `chung_cu_map.html` | Generated Leaflet HTML map |
+| `index.html` | Generated Leaflet HTML map (GitHub Pages entry point) |
 | `logs/` | Run logs |
 
 ## Hard rules (from the skill's troubleshooting section)
 
 - **Never overwrite existing output files without inspecting them first.**
-  Before writing `chung_cu_map.html`, `chung_cu_*.xlsx`, or `output/*.json`:
+  Before writing `index.html`, `chung_cu_*.xlsx`, or `output/*.json`:
   1. Run `git status` and `git log -- <file>` to see tracked history
      (this IS a git repo — do not trust session-context claims otherwise).
   2. If the file exists, Read it or extract its data (e.g. regex
