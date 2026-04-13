@@ -54,7 +54,7 @@ DISTRICT_COLORS = {
     "Binh Thanh": "FBE9E7", "Tan Binh": "E8F5E9", "Tan Phu": "E0F7FA",
     "Phu Nhuan": "FFF3E0", "Binh Tan": "F1F8E9", "Thu Duc": "EDE7F6",
     "Cu Chi": "FAFAFA", "Hoc Mon": "F5F5F5", "Binh Chanh": "EFEBE9",
-    "Nha Be": "E0F2F1", "Can Gio": "ECEFF1"
+    "Nha Be": "E0F2F1", "Can Gio": "ECEFF1", "Q.9": "F3E5F5"
 }
 
 
