@@ -23,6 +23,12 @@ body{font-family:'Segoe UI',sans-serif}
 .pf{font-size:11px;color:#666;margin-top:2px}.pp{color:#e74c3c;font-weight:600}
 .badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600;margin-left:4px}
 @media(max-width:768px){#map{right:0;bottom:45%}#panel{top:55%;width:100%}}
+.infra-legend{background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.2);font-size:12px;line-height:1.8}
+.infra-legend h4{margin:0 0 6px;font-size:13px;font-weight:700}
+.infra-legend .legend-line{display:inline-block;width:30px;height:0;border-top:3px solid #666;vertical-align:middle;margin-right:6px}
+.infra-legend .legend-line.dashed{border-top-style:dashed}
+.infra-legend .legend-line.dotted{border-top-style:dotted}
+.station-marker{background:#fff;border:2px solid #4CAF50;border-radius:50%;width:10px;height:10px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 </style>
 </head>
 <body>
@@ -44,6 +50,9 @@ var dColors = {{COLORS_JSON}};
 // Replace {{PROJECTS_JSON}} with array of project objects
 // Each: {name, lat, lng, price, area, beds, addr, district, note, link}
 var projects = {{PROJECTS_JSON}};
+
+// ===== INFRASTRUCTURE DATA =====
+var infrastructure = {{INFRASTRUCTURE_JSON}};
 
 // ===== BADGE STYLES =====
 // Generate badge CSS dynamically based on districts in projects
@@ -141,6 +150,101 @@ function filterD(d){
 // Initial view: fit all markers
 var ac = markers.map(function(m){return[m.data.lat,m.data.lng]});
 map.fitBounds(ac,{padding:[30,30]});
+
+// ===== INFRASTRUCTURE LAYERS =====
+var infraGroups = {metro: [], highway: [], ringroad: []};
+var statusStyle = {
+  operational: {dashArray: null, opacity: 0.9, weight: 4},
+  construction: {dashArray: '12,8', opacity: 0.7, weight: 4},
+  planned: {dashArray: '4,10', opacity: 0.45, weight: 3}
+};
+var statusLabels = {
+  operational: 'Hoàn thành',
+  construction: 'Đang xây dựng',
+  planned: 'Quy hoạch'
+};
+var typeLabels = {metro: 'Metro', highway: 'Cao tốc', ringroad: 'Vành đai'};
+
+// Layer groups for toggle control
+var metroLayer = L.layerGroup();
+var highwayLayer = L.layerGroup();
+var ringroadLayer = L.layerGroup();
+var layerMap = {metro: metroLayer, highway: highwayLayer, ringroad: ringroadLayer};
+
+infrastructure.forEach(function(route) {
+  var style = statusStyle[route.status] || statusStyle.planned;
+  var polyline = L.polyline(route.coords, {
+    color: route.color,
+    weight: style.weight,
+    opacity: style.opacity,
+    dashArray: style.dashArray,
+    lineJoin: 'round',
+    lineCap: 'round'
+  });
+
+  // Build popup content
+  var statusIcon = route.status === 'operational' ? '✅' : route.status === 'construction' ? '🔨' : '📋';
+  var yearText = route.completionYear ? route.completionYear : 'Chưa xác định';
+  var popupHtml = '<div style="min-width:180px">'
+    + '<h3 style="margin:0 0 5px;font-size:13px">' + route.name + '</h3>'
+    + '<div style="font-size:12px;line-height:1.6">'
+    + '<b>' + statusIcon + ' ' + route.statusVi + '</b><br>'
+    + 'Chiều dài: ' + route.length + '<br>'
+    + 'Hoàn thành: ' + yearText + '<br>'
+    + '<span style="color:#666;font-size:11px">' + route.description + '</span>'
+    + '</div></div>';
+  polyline.bindPopup(popupHtml);
+
+  // Add to appropriate layer group
+  var targetLayer = layerMap[route.type];
+  if (targetLayer) {
+    polyline.addTo(targetLayer);
+  }
+
+  // Draw station markers for metro lines with stations
+  if (route.stations && route.stations.length > 0) {
+    route.stations.forEach(function(st) {
+      var stIcon = L.divIcon({
+        className: 'station-marker-wrap',
+        html: '<div class="station-marker" style="border-color:' + route.color + '"></div>',
+        iconSize: [10, 10],
+        iconAnchor: [5, 5]
+      });
+      var stMarker = L.marker([st.lat, st.lng], {icon: stIcon});
+      stMarker.bindTooltip(st.name, {permanent: false, direction: 'top', offset: [0, -8]});
+      stMarker.addTo(targetLayer);
+    });
+  }
+});
+
+// Add all layers to map by default
+metroLayer.addTo(map);
+highwayLayer.addTo(map);
+ringroadLayer.addTo(map);
+
+// Layer control (overlay only — base layer stays fixed)
+var overlays = {
+  '🚇 Metro': metroLayer,
+  '🛣️ Cao tốc': highwayLayer,
+  '⭕ Vành đai': ringroadLayer
+};
+L.control.layers(null, overlays, {collapsed: false, position: 'topright'}).addTo(map);
+
+// Legend control
+var legend = L.control({position: 'bottomleft'});
+legend.onAdd = function() {
+  var div = L.DomUtil.create('div', 'infra-legend');
+  div.innerHTML = '<h4>Hạ tầng giao thông</h4>'
+    + '<div><span class="legend-line" style="border-color:#333"></span> Hoàn thành</div>'
+    + '<div><span class="legend-line dashed" style="border-color:#333"></span> Đang xây dựng</div>'
+    + '<div><span class="legend-line dotted" style="border-color:#333"></span> Quy hoạch</div>'
+    + '<hr style="margin:6px 0;border:none;border-top:1px solid #ddd">'
+    + '<div><span class="legend-line" style="border-color:#4CAF50"></span> Metro</div>'
+    + '<div><span class="legend-line" style="border-color:#1565C0"></span> Cao tốc</div>'
+    + '<div><span class="legend-line" style="border-color:#7B1FA2"></span> Vành đai</div>';
+  return div;
+};
+legend.addTo(map);
 </script>
 </body>
 </html>
