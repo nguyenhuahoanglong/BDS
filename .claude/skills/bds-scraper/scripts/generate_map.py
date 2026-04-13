@@ -28,6 +28,7 @@ from pathlib import Path
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_TEMPLATE = SKILL_ROOT / "assets" / "map_template.html"
 DEFAULT_DISTRICTS = SKILL_ROOT / "references" / "tphcm-districts.json"
+DEFAULT_INFRASTRUCTURE = SKILL_ROOT / "references" / "tphcm-infrastructure.json"
 
 
 def load_districts(districts_path: Path):
@@ -43,6 +44,17 @@ def load_districts(districts_path: Path):
     return districts, colors
 
 
+def load_infrastructure(infra_path: Path):
+    """Load infrastructure JSON and return list of route objects."""
+    if not infra_path.exists():
+        return []  # Infrastructure is optional
+    with infra_path.open(encoding="utf-8") as f:
+        data = json.load(f)
+    if not isinstance(data, list):
+        raise ValueError(f"Infrastructure data must be a JSON array: {infra_path}")
+    return data
+
+
 def create_bds_map(
     projects,
     output_path,
@@ -50,6 +62,7 @@ def create_bds_map(
     subtitle=None,
     template_path=None,
     districts_path=None,
+    infrastructure_path=None,
 ):
     """Render map_template.html with project data -> self-contained HTML file.
 
@@ -60,12 +73,14 @@ def create_bds_map(
         subtitle: small text under title; defaults to "{n} du an"
         template_path: override template path (default: assets/map_template.html)
         districts_path: override districts JSON (default: references/tphcm-districts.json)
+        infrastructure_path: override infrastructure JSON (default: references/tphcm-infrastructure.json); optional — missing file injects empty array
 
     Returns:
         str: absolute output path
     """
     template_path = Path(template_path or DEFAULT_TEMPLATE)
     districts_path = Path(districts_path or DEFAULT_DISTRICTS)
+    infrastructure_path = Path(infrastructure_path or DEFAULT_INFRASTRUCTURE)
     output_path = Path(output_path)
 
     if not template_path.exists():
@@ -76,6 +91,7 @@ def create_bds_map(
         html = f.read()
 
     districts, colors = load_districts(districts_path)
+    infrastructure = load_infrastructure(infrastructure_path)
 
     # Build subtitle
     if subtitle is None:
@@ -86,6 +102,7 @@ def create_bds_map(
     projects_json = json.dumps(projects, ensure_ascii=False)
     districts_json = json.dumps(districts, ensure_ascii=False)
     colors_json = json.dumps(colors, ensure_ascii=False)
+    infrastructure_json = json.dumps(infrastructure, ensure_ascii=False)
 
     # Substitute placeholders. str.replace is safe here — no shell, no eval.
     replacements = {
@@ -94,6 +111,7 @@ def create_bds_map(
         "{{PROJECTS_JSON}}": projects_json,
         "{{DISTRICTS_JSON}}": districts_json,
         "{{COLORS_JSON}}": colors_json,
+        "{{INFRASTRUCTURE_JSON}}": infrastructure_json,
     }
     for placeholder, value in replacements.items():
         html = html.replace(placeholder, value)
@@ -133,6 +151,7 @@ def main():
     parser.add_argument("--subtitle", default=None, help="Map subtitle")
     parser.add_argument("--template", default=None, help="Override template path")
     parser.add_argument("--districts", default=None, help="Override districts JSON path")
+    parser.add_argument("--infrastructure", default=None, help="Override infrastructure JSON path")
     args = parser.parse_args()
 
     # Parse --data as file path first, then fall back to inline JSON
@@ -160,6 +179,7 @@ def main():
             subtitle=args.subtitle,
             template_path=args.template,
             districts_path=args.districts,
+            infrastructure_path=args.infrastructure,
         )
     except (FileNotFoundError, ValueError, RuntimeError) as e:
         print(f"ERROR: {e}", file=sys.stderr)
