@@ -61,6 +61,10 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
 .infra-legend .legend-line.dashed{border-top-style:dashed}
 .infra-legend .legend-line.dotted{border-top-style:dotted}
 .station-marker{background:#fff;border:2px solid #4CAF50;border-radius:50%;width:10px;height:10px;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+/* Name labels — hidden by default, visible at high zoom */
+.bds-name-label{background:rgba(255,255,255,.92);border:1px solid #ccc;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;color:#333;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.bds-name-label.leaflet-tooltip-permanent{opacity:0;transition:opacity .25s}
+#map.show-labels .bds-name-label.leaflet-tooltip-permanent{opacity:1}
 
 /* ===== MOBILE LAYOUT (max-width: 768px) ===== */
 @media(max-width:768px){
@@ -291,6 +295,7 @@ projects.forEach(function(p, i) {
   if(p.link) popupHtml += '<br><a href="'+p.link+'" target="_blank" style="color:#0563C1">Xem BDS</a>';
   popupHtml += '</div></div>';
   mk.bindPopup(popupHtml);
+  mk.bindTooltip(p.name, {permanent: true, direction: 'right', offset: [13, 0], className: 'bds-name-label'});
 
   // Create list card (used for both desktop and mobile)
   function makeCard() {
@@ -506,6 +511,18 @@ document.getElementById('sort-mobile').onchange = function() { onSort(this.value
 // ===== INITIAL VIEW =====
 var ac = markers.map(function(m){return[m.data.lat,m.data.lng];});
 if(ac.length) map.fitBounds(ac,{padding:[30,30]});
+
+// ===== ZOOM-DEPENDENT NAME LABELS =====
+var NAME_LABEL_ZOOM = 15;
+function updateNameLabels() {
+  if(map.getZoom() >= NAME_LABEL_ZOOM) {
+    map.getContainer().classList.add('show-labels');
+  } else {
+    map.getContainer().classList.remove('show-labels');
+  }
+}
+map.on('zoomend', updateNameLabels);
+updateNameLabels();
 
 // ===== INFRASTRUCTURE LAYERS =====
 var statusStyle = {
