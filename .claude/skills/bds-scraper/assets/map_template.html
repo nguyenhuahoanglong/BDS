@@ -52,8 +52,7 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
 .pf{font-size:12px;color:#666}
 .pf-addr{font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* Badge colors */
-.badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600;margin-left:4px}
+/* Badge colors (district-specific classes defined dynamically via JS) */
 
 /* ===== INFRASTRUCTURE LEGEND ===== */
 .infra-legend{background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.2);font-size:12px;line-height:1.8}
@@ -146,9 +145,6 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
     display:flex;align-items:center;justify-content:center;
     font-weight:700;color:#555;
   }
-
-  /* Layer control collapsed on mobile */
-  .leaflet-control-layers-expanded{display:none !important}
 
   /* Filters in sheet */
   .filters{padding:6px 10px}
@@ -531,13 +527,13 @@ infrastructure.forEach(function(route) {
   });
 
   var statusIcon = route.status === 'operational' ? '✅' : route.status === 'construction' ? '🔨' : '📋';
-  var yearText = route.completionYear ? route.completionYear : 'Chua xac dinh';
+  var yearText = route.completionYear ? route.completionYear : 'Chưa xác định';
   var popupHtml = '<div style="min-width:180px">'
     + '<h3 style="margin:0 0 5px;font-size:13px">' + route.name + '</h3>'
     + '<div style="font-size:12px;line-height:1.6">'
     + '<b>' + statusIcon + ' ' + route.statusVi + '</b><br>'
-    + 'Chieu dai: ' + route.length + '<br>'
-    + 'Hoan thanh: ' + yearText + '<br>'
+    + 'Chiều dài: ' + route.length + '<br>'
+    + 'Hoàn thành: ' + yearText + '<br>'
     + '<span style="color:#666;font-size:11px">' + route.description + '</span>'
     + '</div></div>';
   polyline.bindPopup(popupHtml);
@@ -566,23 +562,24 @@ ringroadLayer.addTo(map);
 
 var overlays = {
   '🚇 Metro': metroLayer,
-  '🛣️ Cao toc': highwayLayer,
-  '⭕ Vanh dai': ringroadLayer
+  '🛣️ Cao tốc': highwayLayer,
+  '⭕ Vành đai': ringroadLayer
 };
-L.control.layers(null, overlays, {collapsed: false, position: 'topright'}).addTo(map);
+var isMobileInit = window.innerWidth <= 768;
+L.control.layers(null, overlays, {collapsed: isMobileInit, position: 'topright'}).addTo(map);
 
 // Legend control
 var legend = L.control({position: 'bottomleft'});
 legend.onAdd = function() {
   var div = L.DomUtil.create('div', 'infra-legend');
-  div.innerHTML = '<h4>Ha tang giao thong</h4>'
-    + '<div><span class="legend-line" style="border-color:#333"></span> Hoan thanh</div>'
-    + '<div><span class="legend-line dashed" style="border-color:#333"></span> Dang xay dung</div>'
-    + '<div><span class="legend-line dotted" style="border-color:#333"></span> Quy hoach</div>'
+  div.innerHTML = '<h4>Hạ tầng giao thông</h4>'
+    + '<div><span class="legend-line" style="border-color:#333"></span> Hoàn thành</div>'
+    + '<div><span class="legend-line dashed" style="border-color:#333"></span> Đang xây dựng</div>'
+    + '<div><span class="legend-line dotted" style="border-color:#333"></span> Quy hoạch</div>'
     + '<hr style="margin:6px 0;border:none;border-top:1px solid #ddd">'
     + '<div><span class="legend-line" style="border-color:#4CAF50"></span> Metro</div>'
-    + '<div><span class="legend-line" style="border-color:#1565C0"></span> Cao toc</div>'
-    + '<div><span class="legend-line" style="border-color:#7B1FA2"></span> Vanh dai</div>';
+    + '<div><span class="legend-line" style="border-color:#1565C0"></span> Cao tốc</div>'
+    + '<div><span class="legend-line" style="border-color:#7B1FA2"></span> Vành đai</div>';
   L.DomEvent.disableClickPropagation(div);
   L.DomEvent.disableScrollPropagation(div);
   return div;
