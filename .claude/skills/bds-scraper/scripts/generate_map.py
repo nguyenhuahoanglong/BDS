@@ -93,9 +93,20 @@ def create_bds_map(
     districts, colors = load_districts(districts_path)
     infrastructure = load_infrastructure(infrastructure_path)
 
+    # Sort: high-confidence first, then medium, then low; within tier by trust desc.
+    confidence_rank = {"high": 0, "medium": 1, "low": 2}
+    projects = sorted(
+        projects,
+        key=lambda p: (
+            confidence_rank.get(p.get("price_confidence", "low"), 3),
+            -(p.get("trust_score") or 0),
+        ),
+    )
+
     # Build subtitle
     if subtitle is None:
-        subtitle = f"{len(projects)} du an"
+        n_high = sum(1 for p in projects if p.get("price_confidence") == "high")
+        subtitle = f"{len(projects)} du an ({n_high} gia tin cay cao)"
 
     # JSON-encode payloads (ensure_ascii=False so Vietnamese renders, but the
     # template stores them in JS string literals which handle UTF-8 fine).

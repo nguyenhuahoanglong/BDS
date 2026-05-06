@@ -95,7 +95,7 @@ def create_bds_excel(projects, output_path, title="BDS Listings"):
     )
 
     # Headers
-    headers = ["STT", "Du An", "Loai", "Khoang Gia", "Dien Tich", "Phong Ngu", "WC", "Dia Chi", "Quan", "Ghi Chu", "Link BDS"]
+    headers = ["STT", "Du An", "Loai", "Khoang Gia", "Gia/m2", "Tin Cay", "Loai Tin", "Nguoi Dang", "Dien Tich", "Phong Ngu", "WC", "Dia Chi", "Quan", "Ghi Chu", "Link BDS"]
     for col, h in enumerate(headers, 1):
         cell = ws1.cell(row=1, column=col, value=h)
         cell.font = header_font
@@ -103,49 +103,82 @@ def create_bds_excel(projects, output_path, title="BDS Listings"):
         cell.alignment = header_align
         cell.border = thin_border
 
+    # Sort: high trust first, then medium, then low; within tier by trust_score desc.
+    confidence_rank = {"high": 0, "medium": 1, "low": 2}
+    projects = sorted(
+        projects,
+        key=lambda p: (
+            confidence_rank.get(p.get("price_confidence", "low"), 3),
+            -(p.get("trust_score") or 0),
+        ),
+    )
+
+    confidence_fills = {
+        "high":   PatternFill(start_color="C8E6C9", end_color="C8E6C9", fill_type="solid"),
+        "medium": PatternFill(start_color="FFF9C4", end_color="FFF9C4", fill_type="solid"),
+        "low":    PatternFill(start_color="FFCDD2", end_color="FFCDD2", fill_type="solid"),
+    }
+    confidence_label = {"high": "Cao", "medium": "TB", "low": "Thap"}
+    vip_label = {"diamond": "VIP KC", "gold": "VIP Vang", "silver": "VIP Bac", "normal": ""}
+    seller_label = {"broker_pro": "Moi gioi pro", "agency": "Cong ty", "individual": "Ca nhan", "unknown": ""}
+
     # Data rows
     for i, p in enumerate(projects, 1):
         row = i + 1
+        conf = p.get("price_confidence", "low")
+        ppm2 = p.get("price_per_m2")
+
         ws1.cell(row=row, column=1, value=i).alignment = Alignment(horizontal="center")
         ws1.cell(row=row, column=2, value=p.get("name", ""))
         ws1.cell(row=row, column=3, value=p.get("type", "Chung cu"))
         ws1.cell(row=row, column=4, value=p.get("price", ""))
-        ws1.cell(row=row, column=5, value=p.get("area", ""))
-        ws1.cell(row=row, column=6, value=p.get("beds", "")).alignment = Alignment(horizontal="center")
-        ws1.cell(row=row, column=7, value=p.get("wc", "")).alignment = Alignment(horizontal="center")
-        ws1.cell(row=row, column=8, value=p.get("addr", ""))
-        ws1.cell(row=row, column=9, value=p.get("district", ""))
-        ws1.cell(row=row, column=10, value=p.get("note", ""))
+        ws1.cell(row=row, column=5, value=(f"{ppm2:.1f}" if isinstance(ppm2, (int, float)) else "")).alignment = Alignment(horizontal="center")
+
+        conf_cell = ws1.cell(row=row, column=6, value=confidence_label.get(conf, conf))
+        conf_cell.alignment = Alignment(horizontal="center")
+        conf_cell.font = Font(bold=True)
+        conf_cell.fill = confidence_fills.get(conf, confidence_fills["low"])
+
+        ws1.cell(row=row, column=7, value=vip_label.get(p.get("vip_tier", "normal"), "")).alignment = Alignment(horizontal="center")
+        ws1.cell(row=row, column=8, value=seller_label.get(p.get("seller_type", "unknown"), ""))
+        ws1.cell(row=row, column=9, value=p.get("area", ""))
+        ws1.cell(row=row, column=10, value=p.get("beds", "")).alignment = Alignment(horizontal="center")
+        ws1.cell(row=row, column=11, value=p.get("wc", "")).alignment = Alignment(horizontal="center")
+        ws1.cell(row=row, column=12, value=p.get("addr", ""))
+        ws1.cell(row=row, column=13, value=p.get("district", ""))
+        ws1.cell(row=row, column=14, value=p.get("note", ""))
 
         # Hyperlink
         link = p.get("link", "")
         if link:
-            cell = ws1.cell(row=row, column=11, value="Xem BDS")
+            cell = ws1.cell(row=row, column=15, value="Xem BDS")
             cell.hyperlink = link
             cell.font = Font(color="0563C1", underline="single")
         else:
-            ws1.cell(row=row, column=11, value="")
+            ws1.cell(row=row, column=15, value="")
 
-        # Color-code by district
+        # Color-code by district (skip Tin Cay column to keep its own color)
         district = p.get("district", "")
         color = get_district_color(district)
         if color:
             fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
-            for col in range(1, 12):
+            for col in range(1, 16):
+                if col == 6:
+                    continue
                 ws1.cell(row=row, column=col).fill = fill
 
         # Border all cells
-        for col in range(1, 12):
+        for col in range(1, 16):
             ws1.cell(row=row, column=col).border = thin_border
 
     # Column widths
-    col_widths = [5, 22, 12, 15, 12, 10, 5, 30, 12, 25, 12]
+    col_widths = [5, 22, 12, 15, 9, 9, 11, 16, 12, 10, 5, 30, 12, 25, 12]
     for i, w in enumerate(col_widths, 1):
         ws1.column_dimensions[get_column_letter(i)].width = w
 
     # Freeze panes and auto-filter
     ws1.freeze_panes = "A2"
-    ws1.auto_filter.ref = f"A1:K{len(projects) + 1}"
+    ws1.auto_filter.ref = f"A1:O{len(projects) + 1}"
 
     # ===== Sheet 2: Coordinates for Google My Maps =====
     ws2 = wb.create_sheet("Toa Do (Map)")

@@ -20,6 +20,14 @@ Each entry is a JSON object with the following fields. Only `name`, `district`, 
 | `link` | string | recommended | `"https://batdongsan.com.vn/..."` | Source listing URL. Becomes hyperlink in Excel. |
 | `lat` | number | yes (map) | `10.7392189` | Decimal latitude from Google Maps `@lat,lng,zoom` URL. |
 | `lng` | number | yes (map) | `106.6797322` | Decimal longitude. |
+| `is_vip` | boolean | no | `true` | Bài có badge "Tin VIP" (Kim Cương / Vàng / Bạc / Thường). Default `false`. |
+| `vip_tier` | string | no | `"diamond"` | One of `"diamond"` (Kim Cương), `"gold"` (Vàng), `"silver"` (Bạc), `"normal"`. Default `"normal"`. |
+| `seller_type` | string | no | `"broker_pro"` | One of `"broker_pro"` (Môi giới chuyên nghiệp), `"agency"` (Cty môi giới), `"individual"` (Chính chủ / cá nhân), `"unknown"`. Default `"unknown"`. |
+| `seller_name` | string | no | `"Nguyen Van A"` | Tên người đăng / công ty. |
+| `posted_days` | number | no | `3` | Số ngày từ lúc đăng. `0` = unknown / today. |
+| `trust_score` | number | no | `75` | 0–100, computed by `score_listings.py`. Cao = đáng tin. |
+| `price_per_m2` | number | no | `52.5` | Triệu VND/m², derived from price midpoint ÷ area midpoint. |
+| `price_confidence` | string | no | `"high"` | One of `"high"`, `"medium"`, `"low"`. Computed by `score_listings.py`. |
 
 ## Canonical district keys
 
@@ -62,3 +70,36 @@ No Vietnamese diacritics (ASCII only) to keep filename-safe and Excel/HTML compa
 2. **Preserve source link** — use the first (or most representative) listing URL.
 3. **District fallback** — if Google Maps coordinate lookup fails, use the district center from `tphcm-districts.json → center_coords[district]`.
 4. **Target 15–30 entries** per search — enough to be useful without overwhelming the map.
+5. **Trust-weighted price merge** — when multiple posts share a project, prefer price from highest-trust post. Order: VIP Kim Cương > Vàng > Bạc > broker_pro > agency > individual. Tie-broken by newest `posted_days`.
+6. **Always run `score_listings.py`** after scrape, before `generate_excel.py` / `generate_map.py`. Adds `trust_score`, `price_per_m2`, `price_confidence`. Never drops entries — low-confidence rows get flagged, not removed.
+
+## Trust score formula (computed by `score_listings.py`)
+
+```
+trust_score = vip_pts + seller_pts + freshness_pts   # capped at 100
+
+vip_pts:        diamond=50, gold=40, silver=30, normal=0
+seller_pts:     broker_pro=30, agency=25, individual=10, unknown=5
+freshness_pts:  posted_days <= 7 → 20, <= 30 → 10, else 0
+```
+
+## Price confidence formula
+
+Compare each listing's `price_per_m2` against the median `price_per_m2` of its (district, type) group **within the current scrape only** (no external benchmark).
+
+```
+group = (district, type)
+if len(group) < 5:
+    confidence = "medium" if trust_score >= 50 else "low"   # not enough data
+else:
+    median = median(price_per_m2 of group)
+    deviation = abs(price_per_m2 - median) / median
+    if deviation <= 0.25 and trust_score >= 60:
+        confidence = "high"
+    elif deviation <= 0.25:
+        confidence = "medium"
+    else:
+        confidence = "low"   # outlier (>±25%) — kept but flagged
+```
+
+Individual sellers without VIP can still reach `medium` if their price aligns with district median. They never reach `high` (insufficient trust signal).

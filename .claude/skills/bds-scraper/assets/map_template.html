@@ -289,7 +289,18 @@ projects.forEach(function(p, i) {
   var bedsWc = '';
   if(p.beds) bedsWc += p.beds + ' PN';
   if(p.wc) bedsWc += (bedsWc ? ' | ' : '') + p.wc + ' WC';
-  var popupHtml = '<div style="min-width:200px"><h3 style="margin:0 0 5px;font-size:14px">'+String(i+1)+'. '+p.name+'</h3><div style="font-size:12px;line-height:1.5"><b style="color:#e74c3c">'+p.price+'</b><br>'+(p.area||'')+(bedsWc ? ' | '+bedsWc : '')+'<br>'+(p.addr||'')+'<br>'+(p.note||'');
+  var conf = p.price_confidence || 'low';
+  var confColor = (conf==='high'?'#2e7d32':(conf==='medium'?'#f9a825':'#c62828'));
+  var confLabel = (conf==='high'?'Tin cay CAO':(conf==='medium'?'Tin cay TB':'Tin cay THAP'));
+  var vipLabel = ({diamond:'VIP Kim Cuong',gold:'VIP Vang',silver:'VIP Bac'})[p.vip_tier]||'';
+  var sellerLabel = ({broker_pro:'Moi gioi pro',agency:'Cong ty',individual:'Ca nhan'})[p.seller_type]||'';
+  var ppm2Str = (typeof p.price_per_m2 === 'number') ? (' (~'+p.price_per_m2.toFixed(1)+' tr/m2)') : '';
+  var popupHtml = '<div style="min-width:200px"><h3 style="margin:0 0 5px;font-size:14px">'+String(i+1)+'. '+p.name+'</h3>'
+    + '<div style="margin:0 0 4px"><span style="background:'+confColor+';color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">'+confLabel+'</span>'
+    + (vipLabel?' <span style="background:#FFD700;color:#000;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">'+vipLabel+'</span>':'')
+    + (sellerLabel?' <span style="background:#eee;color:#333;padding:1px 6px;border-radius:3px;font-size:10px">'+sellerLabel+'</span>':'')
+    + '</div>'
+    + '<div style="font-size:12px;line-height:1.5"><b style="color:#e74c3c">'+p.price+'</b>'+ppm2Str+'<br>'+(p.area||'')+(bedsWc ? ' | '+bedsWc : '')+'<br>'+(p.addr||'')+'<br>'+(p.note||'');
   if(p.link) popupHtml += '<br><a href="'+p.link+'" target="_blank" style="color:#0563C1">Xem BDS</a>';
   popupHtml += '</div></div>';
   mk.bindPopup(popupHtml);
@@ -319,6 +330,19 @@ projects.forEach(function(p, i) {
     badgeEl.textContent = p.district.toUpperCase();
     row1.appendChild(nameEl);
     row1.appendChild(badgeEl);
+    // Confidence dot
+    var confDot = document.createElement('span');
+    var _c = p.price_confidence || 'low';
+    var _dotColor = (_c==='high'?'#2e7d32':(_c==='medium'?'#f9a825':'#c62828'));
+    confDot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:'+_dotColor+';flex-shrink:0;margin-left:4px';
+    confDot.title = (_c==='high'?'Gia tin cay cao':(_c==='medium'?'Gia tin cay TB':'Gia tin cay thap (lech median > 25%)'));
+    row1.appendChild(confDot);
+    if(p.vip_tier && p.vip_tier !== 'normal') {
+      var vipBadge = document.createElement('span');
+      vipBadge.style.cssText = 'background:#FFD700;color:#000;padding:1px 4px;border-radius:3px;font-size:9px;font-weight:700;flex-shrink:0;margin-left:4px';
+      vipBadge.textContent = 'VIP';
+      row1.appendChild(vipBadge);
+    }
 
     var row2 = document.createElement('div');
     row2.className = 'pi-row2';

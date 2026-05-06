@@ -52,18 +52,65 @@ batdongsan.com.vn has anti-bot protection. **Always use the Chrome browser tool*
 - Listings are in cards; the title is typically an `<a>` or `<h3>` with the listing URL.
 - Price/area/beds sit in labeled badges or a spec row under the title.
 - Address is usually the last text line inside a card.
-- VIP/promoted posts are interleaved — prefer real listings with explicit price/area.
+- VIP/promoted posts are interleaved — capture them, do not skip.
 
-### Deduplication
+### Trust signals to extract per card
 
-Different posts often advertise the same project (e.g., *"Topaz Elite"* posted by 5 brokers). Gather:
+Capture these alongside the listing facts so `score_listings.py` can rank by reliability:
+
+| Field | DOM hint | Values |
+|---|---|---|
+| `is_vip` / `vip_tier` | Badge near title — text "VIP Kim Cương", "VIP Vàng", "VIP Bạc", or none | `diamond`, `gold`, `silver`, `normal` |
+| `seller_type` | Right-side seller block — labels like "Môi giới chuyên nghiệp" / "Pro" badge / company logo / "Cá nhân" | `broker_pro`, `agency`, `individual`, `unknown` |
+| `seller_name` | Seller block name text | string |
+| `posted_days` | Card footer "Đăng X ngày trước" / "Hôm nay" / "X giờ trước" | integer days (today/hours → `0`) |
+
+Do **not** drop posts without these signals — set defaults (`vip_tier="normal"`, `seller_type="unknown"`, `posted_days=0`). Scoring degrades gracefully.
+
+### Deduplication (trust-weighted)
+
+Different posts often advertise the same project (e.g., *"Topaz Elite"* posted by 5 brokers). Merge into one entry:
 
 - **One entry per project name**
-- **price** = `"<min>-<max> ty"` across matching posts
+- **price** = use price from the **highest-trust** post (VIP Kim Cương > Vàng > Bạc > broker_pro > agency > individual; tie-broken by smallest `posted_days`). If you have ≥3 broker_pro/VIP posts, take their min–max range.
 - **area** = `"<min>-<max>m2"` across matching posts
-- **note** = representative broker or investor
+- **note** = highest-trust broker/agency name + investor
+- **is_vip / vip_tier / seller_type / posted_days** = from the post that contributed `price`
+- **link** = source URL of that same post
+
+Discard the price from `individual`/unknown sellers if any `broker_pro` or VIP post exists for the same project — they tend to be misquoted or outdated.
 
 Normalize every entry to the schema in `references/data-format.md`.
+
+---
+
+## Step 2.5 — Score listings + flag price outliers
+
+After Step 2 deduplication, before Excel/map generation, run:
+
+```bash
+python scripts/score_listings.py --data output/projects_raw.json --output output/projects.json
+```
+
+This script (in-place safe — reads + writes JSON):
+
+1. Computes `price_per_m2` (triệu VND/m²) from `price` and `area` midpoints. Skips entries with unparseable price/area.
+2. Computes `trust_score` (0–100) from `vip_tier` + `seller_type` + `posted_days` (formula in `references/data-format.md`).
+3. Groups by `(district, type)` and computes median `price_per_m2` per group.
+4. Tags each entry's `price_confidence`:
+   - `high`: trust ≥ 60 AND within ±25% of group median
+   - `medium`: within ±25% of group median (any trust) OR trust ≥ 50 with group < 5 entries
+   - `low`: outside ±25% group median, OR sparse group with low trust
+5. **Never drops entries** — outliers stay in JSON with `price_confidence="low"`, surfaced visually in Excel/map.
+
+Pipeline:
+
+```
+Step 2 scrape → projects_raw.json
+Step 2.5 score → projects.json (enriched, same shape + new fields)
+Step 4 Excel  → reads projects.json
+Step 5 Map    → reads projects.json
+```
 
 ---
 
