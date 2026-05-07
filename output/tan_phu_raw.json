@@ -1,0 +1,18 @@
+[
+  {"name":"Diamond Centery","type":"Chung cu","price":"6.8-13.5 ty","area":"86-160.5m2","beds":"2-3","wc":"2-4","addr":"P. Son Ky, Tan Phu","district":"Tan Phu","note":"Celadon City complex","query":"Diamond Centery Celadon City Tan Phu"},
+  {"name":"Emerald Celadon City","type":"Chung cu","price":"4.0-13.9 ty","area":"53-200m2","beds":"1-5","wc":"1-4","addr":"P. Son Ky, Tan Phu","district":"Tan Phu","note":"Celadon City","query":"Emerald Celadon City Tan Phu"},
+  {"name":"Ruby Celadon City","type":"Chung cu","price":"4.3-5.4 ty","area":"69-93.4m2","beds":"2-3","wc":"2","addr":"P. Son Ky, Tan Phu","district":"Tan Phu","note":"Celadon City","query":"Ruby Celadon City Tan Phu"},
+  {"name":"Celadon City","type":"Chung cu","price":"6.85-13.1 ty","area":"85-200m2","beds":"2-4","wc":"2-3","addr":"P. Son Ky, Tan Phu","district":"Tan Phu","note":"Master complex","query":"Celadon City Tan Phu"},
+  {"name":"Diamond Alnata Plus","type":"Chung cu","price":"7.4-7.6 ty","area":"79-85m2","beds":"2","wc":"2","addr":"P. Son Ky, Tan Phu","district":"Tan Phu","note":"Celadon City","query":"Diamond Alnata Plus Celadon City"},
+  {"name":"The Glen Celadon City","type":"Chung cu","price":"23 ty","area":"299.9m2","beds":"5","wc":"7","addr":"P. Son Ky, Tan Phu","district":"Tan Phu","note":"Celadon City - duplex","query":"The Glen Celadon City Tan Phu"},
+  {"name":"Diamond Brilliant","type":"Chung cu","price":"7.8 ty","area":"96m2","beds":"2","wc":"2","addr":"P. Son Ky, Tan Phu","district":"Tan Phu","note":"Celadon City","query":"Diamond Brilliant Celadon City"},
+  {"name":"RichStar","type":"Chung cu","price":"3.3-3.6 ty","area":"65m2","beds":"2","wc":"2","addr":"P. Hiep Tan, Tan Phu","district":"Tan Phu","note":"Novaland","query":"RichStar Tan Phu Novaland"},
+  {"name":"Melody Residences","type":"Chung cu","price":"3.85-4.1 ty","area":"69-72m2","beds":"2","wc":"2","addr":"P. Tan Son Nhi, Tan Phu","district":"Tan Phu","note":"Hung Thinh","query":"Melody Residences Tan Phu"},
+  {"name":"Oriental Plaza","type":"Chung cu","price":"4.0-5.0 ty","area":"78-105m2","beds":"2-3","wc":"2","addr":"685 Au Co, P. Tan Thanh, Tan Phu","district":"Tan Phu","note":"685 Au Co","query":"Oriental Plaza 685 Au Co Tan Phu"},
+  {"name":"Lotus Garden","type":"Chung cu","price":"3.69-4.3 ty","area":"71-78m2","beds":"2","wc":"2","addr":"P. Hoa Thanh, Tan Phu","district":"Tan Phu","note":"Trinh Dinh Thao","query":"Lotus Garden Trinh Dinh Thao Tan Phu"},
+  {"name":"Valeo Dam Sen","type":"Chung cu","price":"4.9-5.1 ty","area":"95-100m2","beds":"2-3","wc":"2-3","addr":"P. Hoa Thanh, Tan Phu","district":"Tan Phu","note":"near Dam Sen Park","query":"Valeo Dam Sen Tan Phu"},
+  {"name":"Carillon 7","type":"Chung cu","price":"3.79 ty","area":"63.3m2","beds":"2","wc":"2","addr":"Luong Minh Nguyet, P. Tan Thoi Hoa, Tan Phu","district":"Tan Phu","note":"Sacomreal","query":"Carillon 7 Luong Minh Nguyet Tan Phu"},
+  {"name":"Au Co Tower","type":"Chung cu","price":"3.5 ty","area":"63m2","beds":"2","wc":"2","addr":"P. Tan Thanh, Tan Phu","district":"Tan Phu","note":"","query":"Au Co Tower Tan Phu"},
+  {"name":"An Gia Garden","type":"Chung cu","price":"4.1 ty","area":"85m2","beds":"3","wc":"2","addr":"P. Tan Son Nhi, Tan Phu","district":"Tan Phu","note":"An Gia","query":"An Gia Garden Tan Phu"},
+  {"name":"RES Green Tower","type":"Chung cu","price":"3.5 ty","area":"53m2","beds":"2","wc":"1","addr":"P. Hoa Thanh, Tan Phu","district":"Tan Phu","note":"","query":"RES Green Tower Tan Phu"}
+]

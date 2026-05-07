@@ -603,10 +603,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 82.35,
-    "price_confidence": "low"
+    "posted_days": 0
   },
   {
     "name": "Emerald Celadon City",
@@ -624,10 +621,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 70.75,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "Ruby Celadon City",
@@ -645,10 +639,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 59.73,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "Celadon City",
@@ -666,10 +657,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 70.0,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "Diamond Alnata Plus",
@@ -687,10 +675,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 91.46,
-    "price_confidence": "low"
+    "posted_days": 0
   },
   {
     "name": "The Glen Celadon City",
@@ -708,10 +693,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 76.69,
-    "price_confidence": "low"
+    "posted_days": 0
   },
   {
     "name": "Diamond Brilliant",
@@ -729,10 +711,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 81.25,
-    "price_confidence": "low"
+    "posted_days": 0
   },
   {
     "name": "RichStar",
@@ -750,10 +729,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 53.08,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "Melody Residences",
@@ -771,10 +747,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 56.38,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "Oriental Plaza",
@@ -792,10 +765,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 49.18,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "Lotus Garden",
@@ -813,10 +783,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 53.62,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "Valeo Dam Sen",
@@ -834,10 +801,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 51.28,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "Carillon 7",
@@ -855,10 +819,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 59.87,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "Au Co Tower",
@@ -876,10 +837,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 55.56,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "An Gia Garden",
@@ -897,10 +855,7 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 48.24,
-    "price_confidence": "medium"
+    "posted_days": 0
   },
   {
     "name": "RES Green Tower",
@@ -918,9 +873,6 @@
     "is_vip": false,
     "vip_tier": "normal",
     "seller_type": "unknown",
-    "posted_days": 0,
-    "trust_score": 25,
-    "price_per_m2": 66.04,
-    "price_confidence": "medium"
+    "posted_days": 0
   }
 ]
