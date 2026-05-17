@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Máy tính lãi suất vay mua nhà - BDS</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --primary:#2E86AB;
+  --primary-dark:#1a5c7a;
+  --primary-soft:#E8F4FD;
+  --danger:#e74c3c;
+  --success:#27ae60;
+  --warning:#f39c12;
+  --text:#222;
+  --text-muted:#666;
+  --border:#e5e5e5;
+  --bg:#f5f7fa;
+  --card-bg:#fff;
+  --card-shadow:0 2px 8px rgba(0,0,0,.08);
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;padding-bottom:40px}
+
+/* Header */
+.page-header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.page-header h1{font-size:18px;font-weight:600}
+.page-header .back-link{display:inline-block;color:#fff;background:rgba(255,255,255,.15);padding:6px 12px;border-radius:6px;font-size:12px;text-decoration:none;font-weight:600;transition:background .15s}
+.page-header .back-link:hover{background:rgba(255,255,255,.28)}
+
+/* Container */
+.container{max-width:880px;margin:20px auto;padding:0 14px;display:flex;flex-direction:column;gap:14px}
+
+/* Card */
+.card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--card-shadow);padding:18px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:14px;color:var(--primary-dark);display:flex;align-items:center;gap:8px}
+.card h2::before{content:"";width:4px;height:16px;background:var(--primary);border-radius:2px}
+.card .hint{font-size:11px;color:var(--text-muted);margin-top:4px}
+
+/* Form */
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px}
+.field label{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.field input,.field select{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s;background:#fff;color:var(--text)}
+.field input:focus,.field select:focus{border-color:var(--primary)}
+.field .suffix{position:relative}
+.field .suffix::after{content:attr(data-suffix);position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:11px;pointer-events:none}
+.field .suffix input{padding-right:36px}
+.range-row{display:flex;align-items:center;gap:10px}
+.range-row input[type=range]{flex:1}
+.range-row .range-val{min-width:48px;text-align:right;font-weight:600;color:var(--primary-dark)}
+
+/* Loan buttons */
+.loan-buttons{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.loan-buttons button{flex:1;min-width:80px;padding:9px 8px;border:1.5px solid var(--border);background:#fff;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .15s;color:var(--text)}
+.loan-buttons button:hover{border-color:var(--primary);color:var(--primary)}
+.loan-buttons button.active{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-dark)}
+
+/* Summary */
+.summary{background:var(--primary-soft);border-radius:8px;padding:14px;margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.summary .item{display:flex;flex-direction:column;gap:2px}
+.summary .item .lbl{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase}
+.summary .item .val{font-size:15px;font-weight:600;color:var(--primary-dark)}
+.summary .item .val.big{font-size:18px;color:var(--danger)}
+.summary .full{grid-column:1/-1}
+
+/* Traffic light pill */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;background:#f0f0f0}
+.pill .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.pill.green{background:#E8F7EE;color:#1e7e3e}.pill.green .dot{background:var(--success)}
+.pill.yellow{background:#FEF5E3;color:#9a6500}.pill.yellow .dot{background:var(--warning)}
+.pill.red{background:#FDECEA;color:#a02620}.pill.red .dot{background:var(--danger)}
+
+/* Tip box */
+.tip{background:#FFF8E5;border-left:3px solid var(--warning);padding:10px 12px;border-radius:6px;margin-top:10px;font-size:12px;color:#7a5a00}
+.tip strong{color:#5e4400}
+
+/* Charts */
+.chart-wrap{position:relative;height:280px;margin-top:10px}
+.chart-toggle{display:flex;gap:6px;margin-bottom:6px;justify-content:flex-end}
+.chart-toggle button{padding:4px 10px;border:1px solid var(--border);background:#fff;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text-muted)}
+.chart-toggle button.active{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-dark);font-weight:600}
+
+/* Table */
+.table-wrap{overflow-x:auto;max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-top:10px}
+table.amort{width:100%;border-collapse:collapse;font-size:12px;min-width:640px}
+table.amort thead{position:sticky;top:0;background:#f8f9fb;z-index:5}
+table.amort th,table.amort td{padding:7px 9px;text-align:right;border-bottom:1px solid #f0f0f0;white-space:nowrap}
+table.amort th{font-weight:600;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+table.amort th:first-child,table.amort td:first-child{text-align:center;width:50px}
+table.amort tr.promo{background:#FAFCFE}
+table.amort tr.has-prepay{background:#FFF8E5}
+table.amort tr.has-prepay td{font-weight:600}
+table.amort tr.year-end{border-bottom:2px solid var(--border)}
+table.amort .prepay-btn{padding:3px 8px;border:1px solid var(--border);background:#fff;border-radius:5px;font-size:11px;cursor:pointer;color:var(--text-muted);font-family:inherit}
+table.amort .prepay-btn:hover{border-color:var(--primary);color:var(--primary)}
+table.amort .prepay-btn.has{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-dark);font-weight:600}
+
+/* Tier inputs */
+.tier-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tier-row .field input{text-align:center}
+
+/* Save controls */
+.save-grid{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.save-grid select{flex:1;min-width:160px}
+.btn{padding:8px 14px;border:1.5px solid var(--border);background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text);transition:all .15s;white-space:nowrap}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn.primary:hover{background:var(--primary-dark);color:#fff}
+.btn.danger{color:var(--danger);border-color:#f3c7c4}
+.btn.danger:hover{background:#FDECEA;border-color:var(--danger)}
+.autosave-status{font-size:11px;color:var(--text-muted);margin-top:8px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:1000;padding:14px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.2);padding:20px;max-width:420px;width:100%}
+.modal h3{font-size:15px;margin-bottom:12px;color:var(--primary-dark)}
+.modal .modal-body{margin-bottom:14px;font-size:13px}
+.modal .modal-actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:2000;box-shadow:0 4px 12px rgba(0,0,0,.25);transition:transform .25s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:#1e7e3e}
+.toast.error{background:#a02620}
+
+/* Mobile */
+@media (max-width:768px){
+  .container{padding:0 10px;margin-top:12px;gap:12px}
+  .card{padding:14px}
+  .page-header{padding:14px 16px}
+  .page-header h1{font-size:15px}
+  .summary{grid-template-columns:1fr}
+  .tier-row{grid-template-columns:repeat(2,1fr)}
+  .row{gap:10px}
+  .field{min-width:100%}
+  .chart-wrap{height:220px}
+  table.amort{font-size:11px}
+  table.amort th,table.amort td{padding:6px}
+}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <h1>Máy tính lãi suất vay mua nhà</h1>
+  <a href="index.html" class="back-link">&larr; Bản đồ BĐS</a>
+</header>
+
+<main class="container">
+
+  <!-- ===== CARD: SỐ TIỀN VAY ===== -->
+  <section class="card">
+    <h2>Số tiền vay</h2>
+    <div class="row">
+      <div class="field">
+        <label for="loan-input">Mức vay (VND) — gõ số gốc, các nút bên dưới là shortcut +500tr</label>
+        <div class="suffix" data-suffix="VND">
+          <input type="text" id="loan-input" inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+    </div>
+    <div class="loan-buttons" id="loan-buttons"></div>
+    <div class="hint">Click vào nút để chuyển nhanh giữa các mức. Sửa input để đổi mốc xuất phát.</div>
+  </section>
+
+  <!-- ===== CARD: LÃI SUẤT ===== -->
+  <section class="card">
+    <h2>Lãi suất 2 giai đoạn &amp; Kỳ hạn</h2>
+    <div class="row">
+      <div class="field">
+        <label>Lãi ưu đãi (%/năm)</label>
+        <div class="suffix" data-suffix="%"><input type="number" id="promo-rate" step="0.1" min="0" max="30"></div>
+      </div>
+      <div class="field">
+        <label>Thời gian ưu đãi (tháng)</label>
+        <div class="suffix" data-suffix="tháng"><input type="number" id="promo-months" step="1" min="0" max="60"></div>
+      </div>
+      <div class="field">
+        <label>Lãi thả nổi sau ưu đãi (%/năm)</label>
+        <div class="suffix" data-suffix="%"><input type="number" id="float-rate" step="0.1" min="0" max="30"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="field">
+        <label>Kỳ hạn vay</label>
+        <div class="range-row">
+          <input type="range" id="term-years" min="5" max="30" step="1">
+          <span class="range-val" id="term-years-val">20 năm</span>
+        </div>
+      </div>
+    </div>
+    <div class="hint">Tham khảo 2026: ưu đãi 7.5–10%/năm, 6–12 tháng. Thả nổi thực tế 11–14%/năm (lãi cơ sở + biên độ 3–3.5%).</div>
+  </section>
+
+  <!-- ===== CARD: THU NHẬP & AN TOÀN ===== -->
+  <section class="card">
+    <h2>Thu nhập &amp; mức độ an toàn</h2>
+    <div class="row">
+      <div class="field">
+        <label>Lương hàng tháng (VND)</label>
+        <div class="suffix" data-suffix="VND"><input type="text" id="salary" inputmode="numeric"></div>
+      </div>
+      <div class="field">
+        <label>Thưởng dự kiến hàng năm (VND)</label>
+        <div class="suffix" data-suffix="VND"><input type="text" id="bonus" inputmode="numeric"></div>
+      </div>
+      <div class="field">
+        <label>Nợ khác đang trả (VND/tháng)</label>
+        <div class="suffix" data-suffix="VND"><input type="text" id="other-debt" inputmode="numeric"></div>
+      </div>
+    </div>
+
+    <div class="summary" id="summary">
+      <!-- populated by JS -->
+    </div>
+
+    <div class="tip" id="bonus-tip" style="display:none"></div>
+
+    <div class="hint" style="margin-top:10px">
+      DTI = (trả nợ hàng tháng + nợ khác) / thu nhập. Tính theo <strong>tháng đầu thả nổi</strong> (worst case sau khi hết ưu đãi).<br>
+      Ngưỡng: <span class="pill green"><span class="dot"></span>≤36% an toàn</span> &nbsp;
+      <span class="pill yellow"><span class="dot"></span>37–50% căng</span> &nbsp;
+      <span class="pill red"><span class="dot"></span>&gt;50% rủi ro cao</span>
+    </div>
+  </section>
+
+  <!-- ===== CARD: PHÍ TRẢ NỢ TRƯỚC HẠN ===== -->
+  <section class="card">
+    <h2>Phí trả nợ trước hạn (theo năm hợp đồng)</h2>
+    <div class="tier-row">
+      <div class="field">
+        <label>Năm 1</label>
+        <div class="suffix" data-suffix="%"><input type="number" id="tier-1" step="0.1" min="0" max="10"></div>
+      </div>
+      <div class="field">
+        <label>Năm 2</label>
+        <div class="suffix" data-suffix="%"><input type="number" id="tier-2" step="0.1" min="0" max="10"></div>
+      </div>
+      <div class="field">
+        <label>Năm 3</label>
+        <div class="suffix" data-suffix="%"><input type="number" id="tier-3" step="0.1" min="0" max="10"></div>
+      </div>
+      <div class="field">
+        <label>Năm 4 trở đi</label>
+        <div class="suffix" data-suffix="%"><input type="number" id="tier-4" step="0.1" min="0" max="10"></div>
+      </div>
+    </div>
+    <div class="hint">Phí = số tiền trả trước × bậc. Mặc định gần với VPBank (3/2/1/0.5%). Tham khảo Vietcombank 2/2/2/1/0.5%.</div>
+  </section>
+
+  <!-- ===== CARD: BIỂU ĐỒ ===== -->
+  <section class="card">
+    <h2>Biểu đồ</h2>
+    <div class="chart-wrap"><canvas id="balance-chart"></canvas></div>
+    <div class="chart-toggle" style="margin-top:14px">
+      <button class="active" data-bar-mode="year">Gốc vs Lãi theo năm</button>
+      <button data-bar-mode="month">Theo tháng</button>
+    </div>
+    <div class="chart-wrap"><canvas id="breakdown-chart"></canvas></div>
+  </section>
+
+  <!-- ===== CARD: LỊCH TRẢ NỢ ===== -->
+  <section class="card">
+    <h2>Lịch trả nợ chi tiết</h2>
+    <div class="hint">Click nút "+" ở cột "Trả trước" để nhập số tiền trả thêm vào tháng đó. Hệ thống tự tính phí và rút ngắn kỳ hạn.</div>
+    <div class="table-wrap">
+      <table class="amort">
+        <thead>
+          <tr>
+            <th>Tháng</th>
+            <th>Dư đầu kỳ</th>
+            <th>Gốc</th>
+            <th>Lãi</th>
+            <th>Tổng trả</th>
+            <th>Trả trước</th>
+            <th>Phí trả trước</th>
+            <th>Dư cuối kỳ</th>
+          </tr>
+        </thead>
+        <tbody id="amort-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== CARD: LƯU & CHIA SẺ ===== -->
+  <section class="card">
+    <h2>Lưu &amp; chia sẻ phương án</h2>
+    <div class="save-grid">
+      <select id="preset-select"><option value="">— Chọn preset đã lưu —</option></select>
+      <button class="btn primary" id="btn-save-as">Lưu mới...</button>
+      <button class="btn danger" id="btn-delete-preset">Xoá preset</button>
+    </div>
+    <div class="save-grid" style="margin-top:10px">
+      <button class="btn" id="btn-export">Tải xuống JSON</button>
+      <button class="btn" id="btn-import">Nạp từ JSON</button>
+      <input type="file" id="import-file" accept="application/json,.json" style="display:none">
+      <button class="btn" id="btn-share">Sao chép link chia sẻ</button>
+      <button class="btn" id="btn-reset">Reset mặc định</button>
+    </div>
+    <div class="autosave-status" id="autosave-status">Đang chờ...</div>
+    <div class="hint" style="margin-top:8px">
+      <strong>Cross-device:</strong> "Sao chép link" mã hoá toàn bộ trạng thái vào URL. Gửi link cho chính mình (Zalo/email) rồi mở trên máy khác là load lại. JSON dùng để backup hoặc gửi cho người khác.
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== MODAL: PREPAY ===== -->
+<div class="modal-overlay" id="prepay-modal">
+  <div class="modal">
+    <h3>Trả nợ trước hạn — tháng <span id="prepay-month-label"></span></h3>
+    <div class="modal-body">
+      <div class="field">
+        <label>Số tiền trả thêm (VND)</label>
+        <div class="suffix" data-suffix="VND"><input type="text" id="prepay-amount" inputmode="numeric"></div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted)" id="prepay-preview"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="prepay-clear">Xoá khoản trả trước</button>
+      <button class="btn" id="prepay-cancel">Huỷ</button>
+      <button class="btn primary" id="prepay-apply">Áp dụng</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: SAVE PRESET ===== -->
+<div class="modal-overlay" id="save-modal">
+  <div class="modal">
+    <h3>Lưu phương án</h3>
+    <div class="modal-body">
+      <div class="field">
+        <label>Đặt tên cho phương án này</label>
+        <input type="text" id="preset-name" placeholder="VD: Nhà Bình Tân 2.5tỷ — VPBank">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="save-cancel">Huỷ</button>
+      <button class="btn primary" id="save-confirm">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ========== DEFAULT STATE ==========
+const DEFAULT_STATE = {
+  version: 1,
+  loanBase: 2_000_000_000,
+  loan: 2_000_000_000,
+  termYears: 20,
+  promoRate: 7.5,
+  promoMonths: 12,
+  floatRate: 11.0,
+  salary: 30_000_000,
+  bonus: 90_000_000,
+  otherDebt: 0,
+  prepayTiers: [3, 2, 1, 0],
+  prepayments: {}
+};
+
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+// ========== STORAGE KEYS ==========
+const LS_AUTOSAVE = 'bds_loancalc_autosave_v1';
+const LS_PRESETS = 'bds_loancalc_presets_v1';
+
+// ========== UTILS ==========
+function formatVND(n){
+  if (!Number.isFinite(n)) return '0';
+  return Math.round(n).toLocaleString('vi-VN');
+}
+function formatShortVND(n){
+  if (!Number.isFinite(n) || n === 0) return '0';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return (n/1e9).toLocaleString('vi-VN',{maximumFractionDigits:2})+' tỷ';
+  if (abs >= 1e6) return (n/1e6).toLocaleString('vi-VN',{maximumFractionDigits:1})+' tr';
+  if (abs >= 1e3) return (n/1e3).toLocaleString('vi-VN',{maximumFractionDigits:0})+'k';
+  return formatVND(n);
+}
+function parseVNDInput(str){
+  if (typeof str === 'number') return str;
+  if (!str) return 0;
+  const cleaned = String(str).replace(/[^\d.-]/g,'').replace(/\./g,'');
+  const n = parseInt(cleaned, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+function debounce(fn, ms){
+  let t;
+  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+
+// ========== CALC CORE ==========
+function tierRate(month, tiers){
+  const yr = Math.ceil(month / 12);
+  const idx = Math.min(yr, tiers.length) - 1;
+  return (tiers[idx] || 0) / 100;
+}
+
+function calculateSchedule(s){
+  const termMonths = s.termYears * 12;
+  const monthlyPrincipal = s.loan / termMonths;
+  const promoRate = s.promoRate / 100;
+  const floatRate = s.floatRate / 100;
+  const out = [];
+  let opening = s.loan;
+  let totalFee = 0;
+  let totalInterest = 0;
+  const SAFETY_MAX = termMonths * 2 + 10;
+
+  for (let m = 1; m <= SAFETY_MAX; m++){
+    if (opening < 0.5) break;
+    const annual = m <= s.promoMonths ? promoRate : floatRate;
+    const mRate = annual / 12;
+    const interest = opening * mRate;
+    let principal = Math.min(monthlyPrincipal, opening);
+    let closing = opening - principal;
+
+    // Apply prepayment
+    const prepay = +s.prepayments[m] || 0;
+    let appliedPrepay = 0;
+    let prepayFee = 0;
+    if (prepay > 0 && closing > 0.5){
+      appliedPrepay = Math.min(prepay, closing);
+      prepayFee = appliedPrepay * tierRate(m, s.prepayTiers);
+      closing -= appliedPrepay;
+      totalFee += prepayFee;
+    }
+
+    out.push({
+      month: m,
+      opening: opening,
+      principal: principal,
+      interest: interest,
+      total: principal + interest,
+      prepay: appliedPrepay,
+      prepayFee: prepayFee,
+      closing: closing,
+      rate: annual,
+      isPromo: m <= s.promoMonths
+    });
+
+    totalInterest += interest;
+    opening = closing;
+    if (opening < 0.5) break;
+  }
+
+  return {
+    schedule: out,
+    totalFee,
+    totalInterest,
+    originalTermMonths: termMonths,
+    actualTermMonths: out.length,
+    monthsSaved: termMonths - out.length
+  };
+}
+
+function worstCasePayment(s){
+  const termMonths = s.termYears * 12;
+  const monthlyPrincipal = s.loan / termMonths;
+  const promoMonthsCapped = Math.min(s.promoMonths, termMonths - 1);
+  const balanceAtFloat = s.loan - promoMonthsCapped * monthlyPrincipal;
+  const interest = balanceAtFloat * (s.floatRate / 100 / 12);
+  return monthlyPrincipal + interest;
+}
+
+function firstMonthPayment(s){
+  const termMonths = s.termYears * 12;
+  const monthlyPrincipal = s.loan / termMonths;
+  const rate = (s.promoMonths > 0 ? s.promoRate : s.floatRate) / 100 / 12;
+  return monthlyPrincipal + s.loan * rate;
+}
+
+function computeDTI(worstPayment, s){
+  if (!s.salary || s.salary <= 0) return null;
+  const debtMonthly = worstPayment + (s.otherDebt || 0);
+  const dtiSalary = debtMonthly / s.salary;
+  const dtiTotal = debtMonthly / (s.salary + (s.bonus || 0) / 12);
+  const statusOf = r => r <= 0.36 ? 'green' : (r <= 0.50 ? 'yellow' : 'red');
+  return {
+    dtiSalary, dtiTotal,
+    statusSalary: statusOf(dtiSalary),
+    statusTotal: statusOf(dtiTotal)
+  };
+}
+
+function suggestMaxLoan(s, targetPTI=0.30){
+  if (!s.salary || s.salary <= 0) return 0;
+  const target = (s.salary + (s.bonus || 0) / 12) * targetPTI;
+  let lo = 0, hi = 50_000_000_000;
+  for (let i = 0; i < 40; i++){
+    const mid = (lo + hi) / 2;
+    const payment = worstCasePayment({...s, loan: mid});
+    if (payment > target) hi = mid; else lo = mid;
+  }
+  return Math.floor(lo / 100_000_000) * 100_000_000; // round to 100tr
+}
+
+// ========== RENDER ==========
+let balanceChart = null;
+let breakdownChart = null;
+let barMode = 'year';
+
+function statusLabel(st){
+  if (st === 'green') return 'An toàn';
+  if (st === 'yellow') return 'Căng';
+  return 'Rủi ro cao';
+}
+
+function pill(status, label){
+  return `<span class="pill ${status}"><span class="dot"></span>${label}</span>`;
+}
+
+function renderLoanButtons(){
+  const wrap = document.getElementById('loan-buttons');
+  const step = 500_000_000;
+  const base = state.loanBase;
+  const opts = [];
+  for (let i = 0; i < 5; i++) opts.push(base + i * step);
+  wrap.innerHTML = opts.map(v => {
+    const active = Math.abs(v - state.loan) < 1 ? 'active' : '';
+    return `<button data-val="${v}" class="${active}">${formatShortVND(v)}</button>`;
+  }).join('');
+  wrap.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      state.loan = +b.dataset.val;
+      // clear prepayments since schedule changed
+      state.prepayments = {};
+      onStateChange();
+    });
+  });
+}
+
+function renderSummary(result){
+  const wp = worstCasePayment(state);
+  const fp = firstMonthPayment(state);
+  const dti = computeDTI(wp, state);
+  const totalPay = state.loan + result.totalInterest + result.totalFee;
+  const maxLoan = suggestMaxLoan(state);
+
+  let html = '';
+  html += `<div class="item"><span class="lbl">Trả tháng đầu (${state.promoMonths > 0 ? 'ưu đãi' : 'thả nổi'})</span><span class="val">${formatVND(fp)} ₫</span></div>`;
+  html += `<div class="item"><span class="lbl">Trả tháng đầu sau ưu đãi <em style="color:var(--danger);font-style:normal">(worst)</em></span><span class="val big">${formatVND(wp)} ₫</span></div>`;
+
+  if (dti){
+    html += `<div class="item"><span class="lbl">DTI tính theo lương</span><span class="val">${(dti.dtiSalary*100).toFixed(1)}% &nbsp; ${pill(dti.statusSalary, statusLabel(dti.statusSalary))}</span></div>`;
+    html += `<div class="item"><span class="lbl">DTI lương + thưởng/12</span><span class="val">${(dti.dtiTotal*100).toFixed(1)}% &nbsp; ${pill(dti.statusTotal, statusLabel(dti.statusTotal))}</span></div>`;
+  } else {
+    html += `<div class="item full"><span class="lbl">DTI</span><span class="val" style="color:var(--text-muted);font-size:13px">Nhập lương để xem mức độ an toàn</span></div>`;
+  }
+
+  html += `<div class="item"><span class="lbl">Tổng lãi cả kỳ</span><span class="val">${formatVND(result.totalInterest)} ₫</span></div>`;
+  html += `<div class="item"><span class="lbl">Tổng phí trả trước</span><span class="val">${formatVND(result.totalFee)} ₫</span></div>`;
+  html += `<div class="item full"><span class="lbl">Tổng phải trả (gốc + lãi + phí)</span><span class="val">${formatVND(totalPay)} ₫ &nbsp; <em style="color:var(--text-muted);font-style:normal;font-weight:400;font-size:12px">— Thực vay ${formatShortVND(state.loan)}, kỳ hạn ${result.actualTermMonths} tháng${result.monthsSaved > 0 ? ` (rút ngắn ${result.monthsSaved} tháng)` : ''}</em></span></div>`;
+
+  if (maxLoan > 0){
+    const safe = maxLoan >= state.loan;
+    html += `<div class="item full"><span class="lbl">Gợi ý vay an toàn (PTI 30%)</span><span class="val" style="color:${safe ? 'var(--success)' : 'var(--danger)'}">${formatShortVND(maxLoan)} ${safe ? '✓ Đang vay trong vùng an toàn' : '— Đang vay vượt mức an toàn'}</span></div>`;
+  }
+
+  document.getElementById('summary').innerHTML = html;
+
+  // Bonus tip
+  const tipEl = document.getElementById('bonus-tip');
+  if (state.bonus > 0 && state.salary > 0 && result.schedule.length > 12){
+    const noBonus = result;
+    const withBonusState = {...state, prepayments: {...state.prepayments, 12: (+state.prepayments[12] || 0) + state.bonus}};
+    const withBonus = calculateSchedule(withBonusState);
+    const saved = noBonus.totalInterest - withBonus.totalInterest;
+    if (saved > 0){
+      tipEl.style.display = 'block';
+      tipEl.innerHTML = `<strong>Gợi ý:</strong> Dùng thưởng năm (~${formatShortVND(state.bonus)}) để trả trước cuối năm 1 → tiết kiệm <strong>${formatShortVND(saved)}</strong> tiền lãi, rút ngắn <strong>${noBonus.actualTermMonths - withBonus.actualTermMonths} tháng</strong> (sau khi trừ phí ${formatShortVND(withBonus.totalFee - noBonus.totalFee)}).`;
+    } else {
+      tipEl.style.display = 'none';
+    }
+  } else {
+    tipEl.style.display = 'none';
+  }
+}
+
+function renderTable(result){
+  const body = document.getElementById('amort-body');
+  const rows = result.schedule.map(r => {
+    const cls = [];
+    if (r.isPromo) cls.push('promo');
+    if (r.prepay > 0) cls.push('has-prepay');
+    if (r.month % 12 === 0) cls.push('year-end');
+    const prepayBtnCls = r.prepay > 0 ? 'has' : '';
+    const prepayLabel = r.prepay > 0 ? formatShortVND(r.prepay) : '+';
+    return `<tr class="${cls.join(' ')}">
+      <td>${r.month}</td>
+      <td>${formatVND(r.opening)}</td>
+      <td>${formatVND(r.principal)}</td>
+      <td>${formatVND(r.interest)}</td>
+      <td><strong>${formatVND(r.total)}</strong></td>
+      <td><button class="prepay-btn ${prepayBtnCls}" data-month="${r.month}">${prepayLabel}</button></td>
+      <td>${r.prepayFee > 0 ? formatVND(r.prepayFee) : '—'}</td>
+      <td>${formatVND(r.closing)}</td>
+    </tr>`;
+  }).join('');
+  body.innerHTML = rows;
+  body.querySelectorAll('.prepay-btn').forEach(b => {
+    b.addEventListener('click', () => openPrepayModal(+b.dataset.month));
+  });
+}
+
+function renderCharts(result){
+  const labels = result.schedule.map(r => r.month);
+  const balanceData = result.schedule.map(r => Math.max(0, r.closing));
+
+  // Annotation: promo end
+  const promoEnd = state.promoMonths;
+
+  if (balanceChart) balanceChart.destroy();
+  const bctx = document.getElementById('balance-chart').getContext('2d');
+  balanceChart = new Chart(bctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Dư nợ còn lại (VND)',
+        data: balanceData,
+        borderColor: '#2E86AB',
+        backgroundColor: 'rgba(46,134,171,.12)',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        fill: true,
+        tension: 0.15
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: 'Dư nợ còn lại theo tháng', font: {size: 13} },
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `Tháng ${ctx.label}: ${formatVND(ctx.raw)} ₫` } }
+      },
+      scales: {
+        y: { ticks: { callback: v => formatShortVND(v) } },
+        x: { ticks: { maxTicksLimit: 12 } }
+      }
+    }
+  });
+
+  // Breakdown: yearly or monthly
+  let bLabels, principalData, interestData;
+  if (barMode === 'year'){
+    const years = Math.ceil(result.schedule.length / 12);
+    bLabels = []; principalData = []; interestData = [];
+    for (let y = 0; y < years; y++){
+      bLabels.push('Năm ' + (y+1));
+      let p = 0, i = 0;
+      for (let m = y*12; m < Math.min((y+1)*12, result.schedule.length); m++){
+        p += result.schedule[m].principal + result.schedule[m].prepay;
+        i += result.schedule[m].interest;
+      }
+      principalData.push(p);
+      interestData.push(i);
+    }
+  } else {
+    bLabels = labels;
+    principalData = result.schedule.map(r => r.principal + r.prepay);
+    interestData = result.schedule.map(r => r.interest);
+  }
+
+  if (breakdownChart) breakdownChart.destroy();
+  const bdctx = document.getElementById('breakdown-chart').getContext('2d');
+  breakdownChart = new Chart(bdctx, {
+    type: 'bar',
+    data: {
+      labels: bLabels,
+      datasets: [
+        { label: 'Gốc + trả trước', data: principalData, backgroundColor: '#2E86AB' },
+        { label: 'Lãi', data: interestData, backgroundColor: '#e74c3c' }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: `Gốc vs Lãi ${barMode === 'year' ? 'mỗi năm' : 'mỗi tháng'}`, font: {size: 13} },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatVND(ctx.raw)} ₫` } }
+      },
+      scales: {
+        x: { stacked: true, ticks: { maxTicksLimit: barMode === 'year' ? 30 : 12 } },
+        y: { stacked: true, ticks: { callback: v => formatShortVND(v) } }
+      }
+    }
+  });
+}
+
+function renderPresetDropdown(){
+  const sel = document.getElementById('preset-select');
+  const presets = loadPresets();
+  const names = Object.keys(presets).sort();
+  sel.innerHTML = '<option value="">— Chọn preset đã lưu —</option>' +
+    names.map(n => `<option value="${encodeURIComponent(n)}">${n}</option>`).join('');
+}
+
+function render(){
+  // sync inputs from state
+  document.getElementById('loan-input').value = formatVND(state.loanBase);
+  document.getElementById('promo-rate').value = state.promoRate;
+  document.getElementById('promo-months').value = state.promoMonths;
+  document.getElementById('float-rate').value = state.floatRate;
+  document.getElementById('term-years').value = state.termYears;
+  document.getElementById('term-years-val').textContent = state.termYears + ' năm';
+  document.getElementById('salary').value = formatVND(state.salary);
+  document.getElementById('bonus').value = formatVND(state.bonus);
+  document.getElementById('other-debt').value = formatVND(state.otherDebt);
+  document.getElementById('tier-1').value = state.prepayTiers[0];
+  document.getElementById('tier-2').value = state.prepayTiers[1];
+  document.getElementById('tier-3').value = state.prepayTiers[2];
+  document.getElementById('tier-4').value = state.prepayTiers[3];
+
+  renderLoanButtons();
+  const result = calculateSchedule(state);
+  renderSummary(result);
+  renderTable(result);
+  renderCharts(result);
+}
+
+// ========== STATE CHANGE ==========
+const autoSaveDebounced = debounce(() => {
+  try {
+    localStorage.setItem(LS_AUTOSAVE, JSON.stringify(state));
+    const now = new Date();
+    document.getElementById('autosave-status').textContent =
+      `✓ Đã tự lưu lúc ${now.toLocaleTimeString('vi-VN')}`;
+  } catch(e){
+    toast('Không lưu được (localStorage đầy?)', 'error');
+  }
+}, 300);
+
+function onStateChange(){
+  render();
+  autoSaveDebounced();
+}
+
+// ========== INPUTS ==========
+function bindInputs(){
+  document.getElementById('loan-input').addEventListener('input', e => {
+    const v = parseVNDInput(e.target.value);
+    state.loanBase = v;
+    state.loan = v;
+    state.prepayments = {};
+    onStateChange();
+  });
+  document.getElementById('promo-rate').addEventListener('input', e => {
+    state.promoRate = +e.target.value || 0; onStateChange();
+  });
+  document.getElementById('promo-months').addEventListener('input', e => {
+    state.promoMonths = parseInt(e.target.value, 10) || 0; onStateChange();
+  });
+  document.getElementById('float-rate').addEventListener('input', e => {
+    state.floatRate = +e.target.value || 0; onStateChange();
+  });
+  document.getElementById('term-years').addEventListener('input', e => {
+    state.termYears = parseInt(e.target.value, 10) || 1;
+    document.getElementById('term-years-val').textContent = state.termYears + ' năm';
+    state.prepayments = {};
+    onStateChange();
+  });
+  document.getElementById('salary').addEventListener('input', e => {
+    state.salary = parseVNDInput(e.target.value); onStateChange();
+  });
+  document.getElementById('bonus').addEventListener('input', e => {
+    state.bonus = parseVNDInput(e.target.value); onStateChange();
+  });
+  document.getElementById('other-debt').addEventListener('input', e => {
+    state.otherDebt = parseVNDInput(e.target.value); onStateChange();
+  });
+  ['tier-1','tier-2','tier-3','tier-4'].forEach((id, i) => {
+    document.getElementById(id).addEventListener('input', e => {
+      state.prepayTiers[i] = +e.target.value || 0; onStateChange();
+    });
+  });
+
+  // Chart toggle
+  document.querySelectorAll('.chart-toggle button').forEach(b => {
+    b.addEventListener('click', () => {
+      barMode = b.dataset.barMode;
+      document.querySelectorAll('.chart-toggle button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      const result = calculateSchedule(state);
+      renderCharts(result);
+    });
+  });
+
+  // Save/load
+  document.getElementById('preset-select').addEventListener('change', e => {
+    if (e.target.value){
+      loadPreset(decodeURIComponent(e.target.value));
+    }
+  });
+  document.getElementById('btn-save-as').addEventListener('click', openSaveModal);
+  document.getElementById('btn-delete-preset').addEventListener('click', deleteCurrentPreset);
+  document.getElementById('btn-export').addEventListener('click', exportJSON);
+  document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file').click());
+  document.getElementById('import-file').addEventListener('change', importJSON);
+  document.getElementById('btn-share').addEventListener('click', copyShareURL);
+  document.getElementById('btn-reset').addEventListener('click', resetState);
+
+  // Modals
+  document.getElementById('prepay-cancel').addEventListener('click', closePrepayModal);
+  document.getElementById('prepay-apply').addEventListener('click', applyPrepay);
+  document.getElementById('prepay-clear').addEventListener('click', clearPrepay);
+  document.getElementById('prepay-amount').addEventListener('input', updatePrepayPreview);
+  document.getElementById('save-cancel').addEventListener('click', closeSaveModal);
+  document.getElementById('save-confirm').addEventListener('click', confirmSave);
+  document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+  });
+}
+
+// ========== PREPAY MODAL ==========
+let prepayTargetMonth = null;
+function openPrepayModal(month){
+  prepayTargetMonth = month;
+  document.getElementById('prepay-month-label').textContent = month;
+  const cur = +state.prepayments[month] || 0;
+  document.getElementById('prepay-amount').value = cur ? formatVND(cur) : '';
+  updatePrepayPreview();
+  document.getElementById('prepay-modal').classList.add('open');
+  setTimeout(() => document.getElementById('prepay-amount').focus(), 50);
+}
+function closePrepayModal(){
+  document.getElementById('prepay-modal').classList.remove('open');
+  prepayTargetMonth = null;
+}
+function updatePrepayPreview(){
+  if (!prepayTargetMonth) return;
+  const amt = parseVNDInput(document.getElementById('prepay-amount').value);
+  const fee = amt * tierRate(prepayTargetMonth, state.prepayTiers);
+  const yr = Math.ceil(prepayTargetMonth / 12);
+  const tierPct = state.prepayTiers[Math.min(yr, state.prepayTiers.length) - 1] || 0;
+  document.getElementById('prepay-preview').innerHTML =
+    `Năm ${yr} → mức phí ${tierPct}%. Phí trả trước: <strong>${formatVND(fee)} ₫</strong>`;
+}
+function applyPrepay(){
+  if (!prepayTargetMonth) return;
+  const amt = parseVNDInput(document.getElementById('prepay-amount').value);
+  if (amt > 0){
+    state.prepayments[prepayTargetMonth] = amt;
+  } else {
+    delete state.prepayments[prepayTargetMonth];
+  }
+  closePrepayModal();
+  onStateChange();
+}
+function clearPrepay(){
+  if (!prepayTargetMonth) return;
+  delete state.prepayments[prepayTargetMonth];
+  closePrepayModal();
+  onStateChange();
+}
+
+// ========== SAVE MODAL ==========
+function openSaveModal(){
+  document.getElementById('preset-name').value = '';
+  document.getElementById('save-modal').classList.add('open');
+  setTimeout(() => document.getElementById('preset-name').focus(), 50);
+}
+function closeSaveModal(){
+  document.getElementById('save-modal').classList.remove('open');
+}
+function confirmSave(){
+  const name = document.getElementById('preset-name').value.trim();
+  if (!name){ toast('Cần đặt tên', 'error'); return; }
+  const presets = loadPresets();
+  presets[name] = JSON.parse(JSON.stringify(state));
+  try {
+    localStorage.setItem(LS_PRESETS, JSON.stringify(presets));
+    toast('Đã lưu "' + name + '"', 'success');
+    renderPresetDropdown();
+    document.getElementById('preset-select').value = encodeURIComponent(name);
+  } catch(e){ toast('Không lưu được', 'error'); }
+  closeSaveModal();
+}
+
+// ========== PRESETS ==========
+function loadPresets(){
+  try { return JSON.parse(localStorage.getItem(LS_PRESETS) || '{}'); }
+  catch(e){ return {}; }
+}
+function loadPreset(name){
+  const presets = loadPresets();
+  if (!presets[name]){ toast('Preset không tồn tại', 'error'); return; }
+  state = JSON.parse(JSON.stringify(presets[name]));
+  // Ensure required fields exist (forward compat)
+  state = {...DEFAULT_STATE, ...state};
+  onStateChange();
+  toast('Đã nạp "' + name + '"', 'success');
+}
+function deleteCurrentPreset(){
+  const sel = document.getElementById('preset-select');
+  if (!sel.value){ toast('Chọn 1 preset trước khi xoá', 'error'); return; }
+  const name = decodeURIComponent(sel.value);
+  if (!confirm('Xoá preset "' + name + '"?')) return;
+  const presets = loadPresets();
+  delete presets[name];
+  localStorage.setItem(LS_PRESETS, JSON.stringify(presets));
+  renderPresetDropdown();
+  toast('Đã xoá "' + name + '"', 'success');
+}
+
+// ========== EXPORT/IMPORT ==========
+function exportJSON(){
+  const payload = {
+    format: 'bds-loancalc',
+    version: 1,
+    exported: new Date().toISOString(),
+    state: state
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const d = new Date();
+  const stamp = d.toISOString().slice(0,10).replace(/-/g,'');
+  a.download = `loancalc-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Đã tải JSON', 'success');
+}
+function importJSON(e){
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.format !== 'bds-loancalc') throw new Error('Không phải file BDS loan calc');
+      if (data.version !== 1) throw new Error('Phiên bản không tương thích');
+      state = {...DEFAULT_STATE, ...data.state};
+      onStateChange();
+      toast('Đã nạp JSON', 'success');
+    } catch(err){
+      toast('File không hợp lệ: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = ''; // reset
+}
+
+// ========== SHARE URL ==========
+function copyShareURL(){
+  try {
+    const json = JSON.stringify(state);
+    const b64 = btoa(unescape(encodeURIComponent(json)));
+    const url = `${location.origin}${location.pathname}#s=${b64}`;
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url)
+        .then(() => toast('Đã copy link chia sẻ — gửi cho chính mình để mở trên máy khác', 'success'))
+        .catch(() => fallbackCopy(url));
+    } else {
+      fallbackCopy(url);
+    }
+  } catch(e){ toast('Không tạo được link', 'error'); }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); toast('Đã copy link', 'success'); }
+  catch(e){ toast('Copy thủ công: ' + text, 'error'); }
+  document.body.removeChild(ta);
+}
+function loadShareURL(){
+  const m = location.hash.match(/#s=(.+)$/);
+  if (!m) return false;
+  try {
+    const json = decodeURIComponent(escape(atob(m[1])));
+    const s = JSON.parse(json);
+    if (s.version !== 1) throw new Error('version');
+    state = {...DEFAULT_STATE, ...s};
+    // Clear hash so refresh doesn't re-apply
+    history.replaceState(null, '', location.pathname);
+    toast('Đã nạp từ link chia sẻ', 'success');
+    return true;
+  } catch(e){
+    toast('Link chia sẻ không hợp lệ', 'error');
+    return false;
+  }
+}
+
+// ========== AUTOSAVE LOAD ==========
+function loadAutoSave(){
+  try {
+    const raw = localStorage.getItem(LS_AUTOSAVE);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    if (s.version !== 1) return false;
+    state = {...DEFAULT_STATE, ...s};
+    return true;
+  } catch(e){ return false; }
+}
+
+// ========== RESET ==========
+function resetState(){
+  if (!confirm('Reset toàn bộ về mặc định? (Preset đã lưu vẫn còn)')) return;
+  state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  localStorage.removeItem(LS_AUTOSAVE);
+  document.getElementById('preset-select').value = '';
+  onStateChange();
+  toast('Đã reset', 'success');
+}
+
+// ========== TOAST ==========
+let toastTimer = null;
+function toast(msg, type='info'){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded', () => {
+  // Priority: share URL > autosave > default
+  if (!loadShareURL()){
+    loadAutoSave();
+  }
+  renderPresetDropdown();
+  bindInputs();
+  render();
+  document.getElementById('autosave-status').textContent = 'Sẵn sàng — tự lưu sau mỗi thay đổi';
+});
+</script>
+</body>
+</html>

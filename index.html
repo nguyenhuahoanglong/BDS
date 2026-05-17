@@ -22,6 +22,8 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
 /* Header */
 .ph{background:linear-gradient(135deg,#2E86AB,#1a5c7a);color:#fff;padding:14px;text-align:center;flex-shrink:0}
 .ph h2{font-size:15px;margin-bottom:3px}.ph p{font-size:11px;opacity:.85}
+.ph-link{display:inline-block;margin-top:6px;color:#fff;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:6px;font-size:11px;text-decoration:none;font-weight:600;transition:background .15s}
+.ph-link:hover{background:rgba(255,255,255,.28)}
 
 /* Search bar */
 .search-bar{padding:8px 12px;border-bottom:1px solid #eee;flex-shrink:0;display:flex;gap:6px;align-items:center}
@@ -170,7 +172,7 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
 
 <!-- ===== DESKTOP PANEL ===== -->
 <div id="panel">
-  <div class="ph"><h2>BDS Listings</h2><p>44 du an (0 gia tin cay cao)</p></div>
+  <div class="ph"><h2>BDS Listings</h2><p>44 du an (0 gia tin cay cao)</p><a href="loan-calculator.html" class="ph-link">May tinh lai suat &rarr;</a></div>
   <div class="search-bar">
     <input type="text" id="search-desktop" placeholder="Tim kiem du an..." autocomplete="off"/>
     <select class="sort-select" id="sort-desktop">
@@ -188,7 +190,7 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
 <div id="sheet-overlay"></div>
 <div id="sheet" style="display:none">
   <div id="drag-handle"><div id="drag-handle-bar"></div></div>
-  <div class="sh-header"><h2>BDS Listings</h2><p>44 du an (0 gia tin cay cao)</p></div>
+  <div class="sh-header"><h2>BDS Listings</h2><p>44 du an (0 gia tin cay cao)</p><a href="loan-calculator.html" class="ph-link">May tinh lai suat &rarr;</a></div>
   <div class="search-bar">
     <input type="text" id="search-mobile" placeholder="Tim kiem du an..." autocomplete="off"/>
     <select class="sort-select" id="sort-mobile">
