@@ -1,0 +1,5 @@
+# Runtime / per-session state
+.claude/scheduled_tasks.lock
+
+# Local agent skill mirror (canonical copy lives in .claude/skills/)
+.agents/
