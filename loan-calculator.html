@@ -84,17 +84,18 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--t
 .chart-toggle button.active{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-dark);font-weight:600}
 
 /* Table */
-.table-wrap{overflow-x:auto;max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-top:10px}
+.table-wrap{overflow-x:auto;max-height:70vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-top:10px}
 table.amort{width:100%;border-collapse:collapse;font-size:12px;min-width:640px}
 table.amort thead{position:sticky;top:0;background:#f8f9fb;z-index:5}
-table.amort th,table.amort td{padding:7px 9px;text-align:right;border-bottom:1px solid #f0f0f0;white-space:nowrap}
-table.amort th{font-weight:600;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
-table.amort th:first-child,table.amort td:first-child{text-align:center;width:50px}
+table.amort th,table.amort td{padding:4px 9px;text-align:right;border-bottom:1px solid #f0f0f0;white-space:nowrap;line-height:1.35}
+table.amort th{font-weight:600;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.3px;padding:6px 9px}
+table.amort th:first-child,table.amort td:first-child{text-align:center;width:48px}
 table.amort tr.promo{background:#FAFCFE}
 table.amort tr.has-prepay{background:#FFF8E5}
 table.amort tr.has-prepay td{font-weight:600}
 table.amort tr.year-end{border-bottom:2px solid var(--border)}
-table.amort .prepay-btn{padding:3px 8px;border:1px solid var(--border);background:#fff;border-radius:5px;font-size:11px;cursor:pointer;color:var(--text-muted);font-family:inherit}
+table.amort tr.rate-separator td{background:#FFF4E5;text-align:center;font-weight:600;color:#a05c00;padding:7px 8px;border-top:2px solid var(--warning);border-bottom:2px solid var(--warning);letter-spacing:.3px;font-size:12px;position:sticky;left:0}
+table.amort .prepay-btn{padding:2px 8px;border:1px solid var(--border);background:#fff;border-radius:5px;font-size:11px;cursor:pointer;color:var(--text-muted);font-family:inherit;line-height:1.3}
 table.amort .prepay-btn:hover{border-color:var(--primary);color:var(--primary)}
 table.amort .prepay-btn.has{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-dark);font-weight:600}
 
@@ -139,7 +140,8 @@ table.amort .prepay-btn.has{background:var(--primary-soft);border-color:var(--pr
   .field{min-width:100%}
   .chart-wrap{height:220px}
   table.amort{font-size:11px}
-  table.amort th,table.amort td{padding:6px}
+  table.amort th,table.amort td{padding:3px 6px}
+  table.amort th{padding:5px 6px}
 }
 </style>
 </head>
@@ -255,8 +257,7 @@ table.amort .prepay-btn.has{background:var(--primary-soft);border-color:var(--pr
   <!-- ===== CARD: BIỂU ĐỒ ===== -->
   <section class="card">
     <h2>Biểu đồ</h2>
-    <div class="chart-wrap"><canvas id="balance-chart"></canvas></div>
-    <div class="chart-toggle" style="margin-top:14px">
+    <div class="chart-toggle">
       <button class="active" data-bar-mode="year">Gốc vs Lãi theo năm</button>
       <button data-bar-mode="month">Theo tháng</button>
     </div>
@@ -505,7 +506,6 @@ function suggestMaxLoan(s, targetPTI=0.30){
 }
 
 // ========== RENDER ==========
-let balanceChart = null;
 let breakdownChart = null;
 let barMode = 'year';
 
@@ -588,14 +588,20 @@ function renderSummary(result){
 
 function renderTable(result){
   const body = document.getElementById('amort-body');
-  const rows = result.schedule.map(r => {
+  const rowsHTML = [];
+  let separatorInjected = false;
+  for (const r of result.schedule){
+    if (!r.isPromo && !separatorInjected && state.promoMonths > 0){
+      rowsHTML.push(`<tr class="rate-separator"><td colspan="8">▼ Hết ưu đãi sau tháng ${state.promoMonths} — lãi nhảy ${state.promoRate}% → ${state.floatRate}%/năm ▼</td></tr>`);
+      separatorInjected = true;
+    }
     const cls = [];
     if (r.isPromo) cls.push('promo');
     if (r.prepay > 0) cls.push('has-prepay');
     if (r.month % 12 === 0) cls.push('year-end');
     const prepayBtnCls = r.prepay > 0 ? 'has' : '';
     const prepayLabel = r.prepay > 0 ? formatShortVND(r.prepay) : '+';
-    return `<tr class="${cls.join(' ')}">
+    rowsHTML.push(`<tr class="${cls.join(' ')}">
       <td>${r.month}</td>
       <td>${formatVND(r.opening)}</td>
       <td>${formatVND(r.principal)}</td>
@@ -604,9 +610,9 @@ function renderTable(result){
       <td><button class="prepay-btn ${prepayBtnCls}" data-month="${r.month}">${prepayLabel}</button></td>
       <td>${r.prepayFee > 0 ? formatVND(r.prepayFee) : '—'}</td>
       <td>${formatVND(r.closing)}</td>
-    </tr>`;
-  }).join('');
-  body.innerHTML = rows;
+    </tr>`);
+  }
+  body.innerHTML = rowsHTML.join('');
   body.querySelectorAll('.prepay-btn').forEach(b => {
     b.addEventListener('click', () => openPrepayModal(+b.dataset.month));
   });
@@ -614,43 +620,6 @@ function renderTable(result){
 
 function renderCharts(result){
   const labels = result.schedule.map(r => r.month);
-  const balanceData = result.schedule.map(r => Math.max(0, r.closing));
-
-  // Annotation: promo end
-  const promoEnd = state.promoMonths;
-
-  if (balanceChart) balanceChart.destroy();
-  const bctx = document.getElementById('balance-chart').getContext('2d');
-  balanceChart = new Chart(bctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Dư nợ còn lại (VND)',
-        data: balanceData,
-        borderColor: '#2E86AB',
-        backgroundColor: 'rgba(46,134,171,.12)',
-        borderWidth: 2,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        fill: true,
-        tension: 0.15
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: { display: true, text: 'Dư nợ còn lại theo tháng', font: {size: 13} },
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => `Tháng ${ctx.label}: ${formatVND(ctx.raw)} ₫` } }
-      },
-      scales: {
-        y: { ticks: { callback: v => formatShortVND(v) } },
-        x: { ticks: { maxTicksLimit: 12 } }
-      }
-    }
-  });
 
   // Breakdown: yearly or monthly
   let bLabels, principalData, interestData;
