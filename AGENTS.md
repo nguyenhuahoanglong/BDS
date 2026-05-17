@@ -11,9 +11,9 @@ data-generation workspace driven by a single skill.
 
 Any Vietnamese real-estate intent (`tìm nhà`, `chung cư`, `BĐS`, `mua nhà`,
 price cues like `3-5 tỷ`, district cues like `Quận 8`) MUST activate the
-project-local skill at `.Codex/skills/bds-scraper/`.
+project-local skill at `.claude/skills/bds-scraper/`.
 
-Read `.Codex/skills/bds-scraper/SKILL.md` first for the full procedure. The
+Read `.claude/skills/bds-scraper/SKILL.md` first for the full procedure. The
 pipeline is:
 
 ```
@@ -28,8 +28,8 @@ polygons, JSON schema, and a Leaflet template that scripts consume.
 
 | Path | Purpose |
 |---|---|
-| `.Codex/skills/bds-scraper/` | Installed skill (SKILL.md, scripts, references, assets, evals) — canonical source |
-| `bds-scraper-extracted/` | Earlier unzipped copy of the skill; **do not edit** — keep `.Codex/skills/` in sync instead |
+| `.claude/skills/bds-scraper/` | Installed skill (SKILL.md, scripts, references, assets, evals) — canonical source |
+| `bds-scraper-extracted/` | Earlier unzipped copy of the skill; **do not edit** — keep `.claude/skills/` in sync instead |
 | `bds-scraper.skill` / `bds-scraper.zip` | Packaged skill artifacts |
 | `output/projects.json` | Latest scraped+enriched listings (scripts' input) |
 | `output/projects_raw.json` | Pre-enrichment scrape output |
@@ -60,7 +60,7 @@ polygons, JSON schema, and a Leaflet template that scripts consume.
   corrupts `<!DOCTYPE html>` into `<\!DOCTYPE html>`. Always call
   `scripts/generate_map.py`.
 - **Never** run BDS scripts directly from `bds-scraper-extracted/` — that is a
-  stale snapshot. The live copy lives under `.Codex/skills/bds-scraper/`.
+  stale snapshot. The live copy lives under `.claude/skills/bds-scraper/`.
 - Coordinate fallback order when Google Maps can't find a project:
   full address → district center from `references/tphcm-districts.json`.
 - Deduplicate listings by project (keep one entry with min–max price range).
@@ -69,18 +69,18 @@ polygons, JSON schema, and a Leaflet template that scripts consume.
 
 When updating the skill (new districts, schema changes, script fixes):
 
-1. Edit under `.Codex/skills/bds-scraper/` — that is the live copy Codex
+1. Edit under `.claude/skills/bds-scraper/` — that is the live copy Claude
    loads.
 2. If the canonical upstream lives in `C:\Users\LN\Project\Personal\Script`
    (per global AGENTS.md, Script is the single source of truth for reusable
    skills), mirror the change there as well so other projects pick it up.
 3. Re-package with
-   `python "C:/Users/LN/.Codex/skills/skill-creator/scripts/package_skill.py" .Codex/skills/bds-scraper`
+   `python "C:/Users/LN/.claude/skills/skill-creator/scripts/package_skill.py" .claude/skills/bds-scraper`
    if a fresh `.skill`/`.zip` is needed.
 
 ## JSON contract (scripts' input)
 
-See `.Codex/skills/bds-scraper/references/data-format.md` for the authoritative
+See `.claude/skills/bds-scraper/references/data-format.md` for the authoritative
 schema. Minimum fields per listing: `name`, `type`, `price`, `area`, `beds`,
 `wc`, `addr`, `district`, `link`, `lat`, `lng`.
 
