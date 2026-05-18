@@ -103,6 +103,31 @@ table.amort .prepay-btn.has{background:var(--primary-soft);border-color:var(--pr
 .tier-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .tier-row .field input{text-align:center}
 
+/* Budget plan card */
+.toggle-row{display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-size:13px;color:var(--text)}
+.toggle-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--primary)}
+.quick-chips{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.quick-chips button{padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:14px;background:#fff;cursor:pointer;font-family:inherit;color:var(--text-muted);font-weight:600;transition:all .15s}
+.quick-chips button:hover{border-color:var(--primary);color:var(--primary)}
+.quick-chips button.active{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-dark)}
+.plan-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.plan-summary .stat{background:var(--primary-soft);padding:10px;border-radius:8px;text-align:center}
+.plan-summary .stat .lbl{font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:3px}
+.plan-summary .stat .val{font-weight:600;font-size:14px;color:var(--primary-dark)}
+.plan-summary .stat.saved .val{color:var(--success)}
+.plan-summary .stat.warn .val{color:var(--danger)}
+.plan-help{margin-top:12px}
+.plan-help summary{cursor:pointer;font-size:12px;color:var(--primary-dark);font-weight:600;padding:4px 0}
+.plan-help[open] summary{margin-bottom:6px}
+.plan-warn{margin-top:10px;font-size:12px;color:var(--danger);background:#FDECEA;padding:8px 10px;border-radius:6px;border-left:3px solid var(--danger)}
+table.amort tr.has-planned-prepay{background:#E8F7EE}
+table.amort tr.has-planned-prepay td{font-weight:600}
+table.amort tr.has-prepay.has-planned-prepay{background:linear-gradient(90deg,#FFF8E5 50%,#E8F7EE 50%)}
+table.amort .prepay-btn.planned{background:#E8F7EE;border-color:var(--success);color:#1e7e3e}
+@media (max-width:768px){
+  .plan-summary{grid-template-columns:1fr;gap:6px}
+}
+
 /* Save controls */
 .save-grid{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .save-grid select{flex:1;min-width:160px}
@@ -228,6 +253,42 @@ table.amort .prepay-btn.has{background:var(--primary-soft);border-color:var(--pr
       <span class="pill yellow"><span class="dot"></span>37–50% căng</span> &nbsp;
       <span class="pill red"><span class="dot"></span>&gt;50% rủi ro cao</span>
     </div>
+  </section>
+
+  <!-- ===== CARD: KẾ HOẠCH TRẢ NHANH ===== -->
+  <section class="card" id="card-budget-plan">
+    <h2>Kế hoạch trả nhanh (tùy chọn)</h2>
+    <div class="row">
+      <div class="field" style="flex:2">
+        <label>Ngân sách dành cho khoản vay mỗi tháng (VND)</label>
+        <div class="suffix" data-suffix="VND"><input type="text" id="monthly-budget" inputmode="numeric"></div>
+        <div class="quick-chips" id="budget-chips"></div>
+      </div>
+    </div>
+
+    <label class="toggle-row">
+      <input type="checkbox" id="auto-prepay-enabled">
+      <span>Tự động dùng phần dư + thưởng năm để trả trước cuối mỗi 12 tháng</span>
+    </label>
+    <label class="toggle-row" style="margin-left:24px">
+      <input type="checkbox" id="skip-promo-period">
+      <span>Bỏ qua thời gian ưu đãi (chỉ tích lũy, prepay từ sau ưu đãi)</span>
+    </label>
+
+    <div id="plan-warn" class="plan-warn" style="display:none"></div>
+
+    <div class="plan-summary" id="plan-summary" style="display:none"></div>
+
+    <details class="plan-help">
+      <summary>Mức ngân sách nên dành ra bao nhiêu? (thuật toán &amp; gợi ý)</summary>
+      <div class="hint" style="font-size:12px;line-height:1.6">
+        <strong>Quy tắc 28/36 (chuẩn Mỹ):</strong> tiền nhà ≤28%, tổng nợ ≤36% thu nhập gross hàng tháng.<br>
+        <strong>Thực tế Việt Nam:</strong> DTI 30-40% an toàn, 40-50% căng, &gt;50% rủi ro cao. Ngân hàng thường cho phép tới 50-65% nhưng đó là trần, không phải mức nên.<br>
+        <strong>Trước khi aggressive:</strong> giữ quỹ dự phòng 3-6 tháng chi tiêu thiết yếu trước. Đừng dồn 100% phần dư vào trả nợ nếu lãi vay &lt; lợi suất gửi tiết kiệm dài hạn / TPCP (opportunity cost).<br>
+        <strong>Thuật toán prepay:</strong> mỗi tháng <em>surplus = budget − tiền trả thực tế</em>; cộng dồn 12 tháng + thưởng năm → áp vào tháng cuối năm (12, 24, 36...). Phí prepay áp theo bậc năm hợp đồng — tham khảo card "Phí trả nợ trước hạn" bên dưới.<br>
+        <strong>3 mức gợi ý</strong> (chips bên trên) tính theo % của <em>lương + thưởng/12</em>: an toàn 30%, cân bằng 40%, aggressive 50%. Nếu mức trả worst-case vượt 50% thu nhập, calculator sẽ cảnh báo đỏ — nên giảm khoản vay hoặc kéo dài kỳ hạn.
+      </div>
+    </details>
   </section>
 
   <!-- ===== CARD: PHÍ TRẢ NỢ TRƯỚC HẠN ===== -->
@@ -365,7 +426,10 @@ const DEFAULT_STATE = {
   bonus: 100_000_000,
   otherDebt: 0,
   prepayTiers: [3, 2, 1, 0],
-  prepayments: {}
+  prepayments: {},
+  monthlyBudget: 0,
+  autoPrepayEnabled: false,
+  skipPromoPeriod: false
 };
 
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -406,15 +470,20 @@ function tierRate(month, tiers){
   return (tiers[idx] || 0) / 100;
 }
 
-function calculateSchedule(s){
+function calculateSchedule(s, opts){
+  const planEnabled = !!(s.autoPrepayEnabled && s.monthlyBudget > 0) && !(opts && opts.disablePlan);
   const termMonths = s.termYears * 12;
   const monthlyPrincipal = s.loan / termMonths;
   const promoRate = s.promoRate / 100;
   const floatRate = s.floatRate / 100;
+  const startAccumulateMonth = s.skipPromoPeriod ? (s.promoMonths + 1) : 1;
   const out = [];
   let opening = s.loan;
   let totalFee = 0;
   let totalInterest = 0;
+  let totalManualPrepay = 0;
+  let totalPlannedPrepay = 0;
+  let accumulator = 0;
   const SAFETY_MAX = termMonths * 2 + 10;
 
   for (let m = 1; m <= SAFETY_MAX; m++){
@@ -425,15 +494,34 @@ function calculateSchedule(s){
     let principal = Math.min(monthlyPrincipal, opening);
     let closing = opening - principal;
 
-    // Apply prepayment
-    const prepay = +s.prepayments[m] || 0;
+    // Accumulate surplus for planned prepay (only when plan active)
+    let plannedPrepay = 0;
+    if (planEnabled && m >= startAccumulateMonth){
+      const payment = principal + interest;
+      const surplus = Math.max(0, s.monthlyBudget - payment);
+      accumulator += surplus;
+      if (m % 12 === 0){
+        plannedPrepay = accumulator + (s.bonus || 0);
+        accumulator = 0;
+      }
+    }
+
+    const manualPrepay = +s.prepayments[m] || 0;
+    const requestedPrepay = manualPrepay + plannedPrepay;
     let appliedPrepay = 0;
+    let appliedManual = 0;
+    let appliedPlanned = 0;
     let prepayFee = 0;
-    if (prepay > 0 && closing > 0.5){
-      appliedPrepay = Math.min(prepay, closing);
+    if (requestedPrepay > 0 && closing > 0.5){
+      appliedPrepay = Math.min(requestedPrepay, closing);
+      // proportional split between manual and planned (manual first)
+      appliedManual = Math.min(manualPrepay, appliedPrepay);
+      appliedPlanned = appliedPrepay - appliedManual;
       prepayFee = appliedPrepay * tierRate(m, s.prepayTiers);
       closing -= appliedPrepay;
       totalFee += prepayFee;
+      totalManualPrepay += appliedManual;
+      totalPlannedPrepay += appliedPlanned;
     }
 
     out.push({
@@ -443,10 +531,13 @@ function calculateSchedule(s){
       interest: interest,
       total: principal + interest,
       prepay: appliedPrepay,
+      manualPrepay: appliedManual,
+      plannedPrepay: appliedPlanned,
       prepayFee: prepayFee,
       closing: closing,
       rate: annual,
-      isPromo: m <= s.promoMonths
+      isPromo: m <= s.promoMonths,
+      isPlannedPrepay: appliedPlanned > 0
     });
 
     totalInterest += interest;
@@ -458,9 +549,12 @@ function calculateSchedule(s){
     schedule: out,
     totalFee,
     totalInterest,
+    totalManualPrepay,
+    totalPlannedPrepay,
     originalTermMonths: termMonths,
     actualTermMonths: out.length,
-    monthsSaved: termMonths - out.length
+    monthsSaved: termMonths - out.length,
+    planEnabled
   };
 }
 
@@ -503,6 +597,21 @@ function suggestMaxLoan(s, targetPTI=0.30){
     if (payment > target) hi = mid; else lo = mid;
   }
   return Math.floor(lo / 100_000_000) * 100_000_000; // round to 100tr
+}
+
+function recommendBudgets(s){
+  if (!s.salary || s.salary <= 0) return null;
+  const income = s.salary + (s.bonus || 0) / 12;
+  const worst = worstCasePayment(s);
+  const round = v => Math.round(v / 1_000_000) * 1_000_000;
+  return {
+    income,
+    worst,
+    safe: round(Math.max(worst, income * 0.30)),
+    balanced: round(Math.max(worst, income * 0.40)),
+    aggressive: round(Math.max(worst, income * 0.50)),
+    worstExceedsLimit: worst > income * 0.50
+  };
 }
 
 // ========== RENDER ==========
@@ -568,9 +677,11 @@ function renderSummary(result){
 
   document.getElementById('summary').innerHTML = html;
 
-  // Bonus tip
+  // Bonus tip (skip when auto-prepay plan is active — plan already covers bonus)
   const tipEl = document.getElementById('bonus-tip');
-  if (state.bonus > 0 && state.salary > 0 && result.schedule.length > 12){
+  if (state.autoPrepayEnabled && state.monthlyBudget > 0){
+    tipEl.style.display = 'none';
+  } else if (state.bonus > 0 && state.salary > 0 && result.schedule.length > 12){
     const noBonus = result;
     const withBonusState = {...state, prepayments: {...state.prepayments, 12: (+state.prepayments[12] || 0) + state.bonus}};
     const withBonus = calculateSchedule(withBonusState);
@@ -586,6 +697,74 @@ function renderSummary(result){
   }
 }
 
+function renderBudgetChips(){
+  const wrap = document.getElementById('budget-chips');
+  const rec = recommendBudgets(state);
+  if (!rec){
+    wrap.innerHTML = '<span class="hint" style="font-size:11px">Nhập lương để xem gợi ý mức ngân sách.</span>';
+    return;
+  }
+  const chips = [
+    { label: 'An toàn 30%', val: rec.safe },
+    { label: 'Cân bằng 40%', val: rec.balanced },
+    { label: 'Aggressive 50%', val: rec.aggressive }
+  ];
+  wrap.innerHTML = chips.map(c => {
+    const active = Math.abs(c.val - state.monthlyBudget) < 1 ? 'active' : '';
+    return `<button class="${active}" data-val="${c.val}" title="${formatVND(c.val)} ₫/tháng">${c.label} · ${formatShortVND(c.val)}</button>`;
+  }).join('');
+  wrap.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      state.monthlyBudget = +b.dataset.val;
+      if (!state.autoPrepayEnabled) state.autoPrepayEnabled = true;
+      onStateChange();
+    });
+  });
+}
+
+function renderPlanSummary(result){
+  const el = document.getElementById('plan-summary');
+  const warnEl = document.getElementById('plan-warn');
+  if (!result.planEnabled){
+    el.style.display = 'none';
+    warnEl.style.display = 'none';
+    return;
+  }
+  el.style.display = 'grid';
+
+  // Shadow calculation: same state but plan disabled — to compute interest saved
+  const baseline = calculateSchedule(state, { disablePlan: true });
+  const interestSaved = baseline.totalInterest - result.totalInterest;
+  const monthsSavedVsBase = baseline.actualTermMonths - result.actualTermMonths;
+
+  // Average planned prepay per year (over years that actually had a prepay)
+  const prepayYears = result.schedule.filter(r => r.isPlannedPrepay).length;
+  const avgYearly = prepayYears > 0 ? result.totalPlannedPrepay / prepayYears : 0;
+
+  const yearsToPayoff = result.actualTermMonths / 12;
+  const yearsStr = yearsToPayoff < 1
+    ? `${result.actualTermMonths} tháng`
+    : `${yearsToPayoff.toFixed(yearsToPayoff % 1 < 0.05 ? 0 : 1)} năm`;
+
+  el.innerHTML = `
+    <div class="stat"><span class="lbl">Prepay TB/năm</span><span class="val">${formatShortVND(avgYearly)}</span></div>
+    <div class="stat"><span class="lbl">Trả hết sau</span><span class="val">${yearsStr}${monthsSavedVsBase > 0 ? ` <em style="font-style:normal;font-weight:400;font-size:11px;color:var(--text-muted)">(−${monthsSavedVsBase}t)</em>` : ''}</span></div>
+    <div class="stat ${interestSaved > 0 ? 'saved' : ''}"><span class="lbl">Lãi tiết kiệm</span><span class="val">${formatShortVND(Math.max(0, interestSaved))}</span></div>
+  `;
+
+  // Warning: budget < worst case
+  const rec = recommendBudgets(state);
+  if (rec && state.monthlyBudget < rec.worst){
+    warnEl.style.display = 'block';
+    warnEl.innerHTML = `Ngân sách ${formatShortVND(state.monthlyBudget)} <strong>thấp hơn mức trả worst-case</strong> (${formatShortVND(rec.worst)}/tháng sau khi hết ưu đãi). Sẽ không có phần dư để prepay sau ưu đãi — chỉ thưởng năm được áp dụng. Cân nhắc tăng ngân sách hoặc kéo dài kỳ hạn.`;
+  } else if (rec && rec.worstExceedsLimit){
+    warnEl.style.display = 'block';
+    warnEl.innerHTML = `Mức trả worst-case (${formatShortVND(rec.worst)}/tháng) đã vượt 50% thu nhập — rủi ro cao kể cả khi không prepay. Nên giảm khoản vay hoặc kéo dài kỳ hạn.`;
+  } else {
+    warnEl.style.display = 'none';
+  }
+}
+
 function renderTable(result){
   const body = document.getElementById('amort-body');
   const rowsHTML = [];
@@ -597,17 +776,31 @@ function renderTable(result){
     }
     const cls = [];
     if (r.isPromo) cls.push('promo');
-    if (r.prepay > 0) cls.push('has-prepay');
+    if (r.manualPrepay > 0) cls.push('has-prepay');
+    if (r.isPlannedPrepay) cls.push('has-planned-prepay');
     if (r.month % 12 === 0) cls.push('year-end');
-    const prepayBtnCls = r.prepay > 0 ? 'has' : '';
-    const prepayLabel = r.prepay > 0 ? formatShortVND(r.prepay) : '+';
+    const btnCls = [];
+    if (r.manualPrepay > 0) btnCls.push('has');
+    if (r.isPlannedPrepay && r.manualPrepay === 0) btnCls.push('planned');
+    let prepayLabel = '+';
+    let prepayTitle = 'Nhập số tiền trả trước tay';
+    if (r.prepay > 0){
+      prepayLabel = formatShortVND(r.prepay);
+      if (r.manualPrepay > 0 && r.plannedPrepay > 0){
+        prepayTitle = `Tay ${formatShortVND(r.manualPrepay)} + kế hoạch ${formatShortVND(r.plannedPrepay)}`;
+      } else if (r.plannedPrepay > 0){
+        prepayTitle = `Tự động (kế hoạch trả nhanh): ${formatShortVND(r.plannedPrepay)}`;
+      } else {
+        prepayTitle = `Trả tay: ${formatShortVND(r.manualPrepay)}`;
+      }
+    }
     rowsHTML.push(`<tr class="${cls.join(' ')}">
       <td>${r.month}</td>
       <td>${formatVND(r.opening)}</td>
       <td>${formatVND(r.principal)}</td>
       <td>${formatVND(r.interest)}</td>
       <td><strong>${formatVND(r.total)}</strong></td>
-      <td><button class="prepay-btn ${prepayBtnCls}" data-month="${r.month}">${prepayLabel}</button></td>
+      <td><button class="prepay-btn ${btnCls.join(' ')}" data-month="${r.month}" title="${prepayTitle}">${prepayLabel}</button></td>
       <td>${r.prepayFee > 0 ? formatVND(r.prepayFee) : '—'}</td>
       <td>${formatVND(r.closing)}</td>
     </tr>`);
@@ -687,14 +880,19 @@ function render(){
   document.getElementById('salary').value = formatVND(state.salary);
   document.getElementById('bonus').value = formatVND(state.bonus);
   document.getElementById('other-debt').value = formatVND(state.otherDebt);
+  document.getElementById('monthly-budget').value = state.monthlyBudget ? formatVND(state.monthlyBudget) : '';
+  document.getElementById('auto-prepay-enabled').checked = !!state.autoPrepayEnabled;
+  document.getElementById('skip-promo-period').checked = !!state.skipPromoPeriod;
   document.getElementById('tier-1').value = state.prepayTiers[0];
   document.getElementById('tier-2').value = state.prepayTiers[1];
   document.getElementById('tier-3').value = state.prepayTiers[2];
   document.getElementById('tier-4').value = state.prepayTiers[3];
 
   renderLoanButtons();
+  renderBudgetChips();
   const result = calculateSchedule(state);
   renderSummary(result);
+  renderPlanSummary(result);
   renderTable(result);
   renderCharts(result);
 }
@@ -753,6 +951,17 @@ function bindInputs(){
     document.getElementById(id).addEventListener('input', e => {
       state.prepayTiers[i] = +e.target.value || 0; onStateChange();
     });
+  });
+
+  // Budget plan
+  document.getElementById('monthly-budget').addEventListener('input', e => {
+    state.monthlyBudget = parseVNDInput(e.target.value); onStateChange();
+  });
+  document.getElementById('auto-prepay-enabled').addEventListener('change', e => {
+    state.autoPrepayEnabled = e.target.checked; onStateChange();
+  });
+  document.getElementById('skip-promo-period').addEventListener('change', e => {
+    state.skipPromoPeriod = e.target.checked; onStateChange();
   });
 
   // Chart toggle
