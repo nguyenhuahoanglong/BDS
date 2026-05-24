@@ -232,7 +232,7 @@ if __name__ == "__main__":
 
     # Parse data
     if Path(args.data).exists():
-        with open(args.data) as f:
+        with open(args.data, encoding="utf-8") as f:
             projects = json.load(f)
     else:
         projects = json.loads(args.data)

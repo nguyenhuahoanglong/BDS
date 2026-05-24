@@ -3,3 +3,9 @@
 
 # Local agent skill mirror (canonical copy lives in .claude/skills/)
 .agents/
+
+# Local HTTP server / scraper logs
+logs/
+
+# Local backups created during merge operations
+output/*.backup.json
