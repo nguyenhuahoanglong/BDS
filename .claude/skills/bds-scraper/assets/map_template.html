@@ -162,9 +162,101 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
   .leaflet-bottom.leaflet-left{bottom:55vh;z-index:1001}
   .infra-legend{max-height:40vh;overflow-y:auto}
 }
+
+/* ===== EDIT MODE ===== */
+/* Edit mode toolbar */
+.edit-toolbar{position:absolute;top:8px;right:328px;z-index:1100;display:flex;gap:6px;background:rgba(255,255,255,.95);padding:6px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.edit-toolbar button{padding:6px 10px;border:1.5px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;font-weight:600}
+.edit-toolbar button.active{background:#2E86AB;color:#fff;border-color:#2E86AB}
+.edit-toolbar .dirty-badge{padding:4px 8px;background:#e74c3c;color:#fff;border-radius:6px;font-size:11px;font-weight:700;display:none}
+.edit-toolbar .dirty-badge.show{display:inline-block}
+@media(max-width:768px){.edit-toolbar{right:8px;top:8px}}
+
+/* Edit mode marker style: dashed border */
+.cm.editing > div{border-style:dashed !important;border-width:3px !important;cursor:move}
+
+/* Modal */
+.bds-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:none;align-items:center;justify-content:center;padding:12px}
+.bds-modal.show{display:flex}
+.bds-modal-card{background:#fff;border-radius:10px;padding:18px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.bds-modal-card h3{margin-bottom:12px;font-size:16px}
+.bds-modal-card label{display:block;font-size:12px;font-weight:600;color:#555;margin:8px 0 3px}
+.bds-modal-card input,.bds-modal-card select,.bds-modal-card textarea{width:100%;padding:7px 9px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none}
+.bds-modal-card input:focus,.bds-modal-card select:focus,.bds-modal-card textarea:focus{border-color:#2E86AB}
+.bds-modal-card .row{display:flex;gap:8px}
+.bds-modal-card .row > *{flex:1}
+.bds-modal-footer{margin-top:14px;display:flex;gap:8px;justify-content:flex-end}
+.bds-modal-footer button{padding:8px 14px;border-radius:6px;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-weight:600}
+.bds-modal-footer .primary{background:#2E86AB;color:#fff;border-color:#2E86AB}
+.bds-modal-footer .danger{background:#e74c3c;color:#fff;border-color:#e74c3c}
+
+/* Restore banner */
+.restore-banner{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1500;background:#fff;border:2px solid #f9a825;border-radius:8px;padding:10px 14px;box-shadow:0 4px 16px rgba(0,0,0,.2);display:none;align-items:center;gap:10px;font-size:13px}
+.restore-banner.show{display:flex}
+.restore-banner button{padding:5px 10px;border-radius:5px;border:1px solid #ddd;background:#fff;cursor:pointer;font-weight:600;font-size:12px}
+.restore-banner button.primary{background:#2E86AB;color:#fff;border-color:#2E86AB}
+
+/* Starred indicator in list card */
+.star-indicator{color:#f9a825;font-size:14px;margin-left:4px;flex-shrink:0}
+.user-note-indicator{font-size:12px;color:#888;margin-left:4px;flex-shrink:0}
+.manual-badge{background:#9c27b0;color:#fff;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;flex-shrink:0;margin-left:4px}
 </style>
 </head>
 <body>
+<!-- ===== EDIT MODE TOOLBAR ===== -->
+<div class="edit-toolbar">
+  <button id="btn-edit-toggle">✏️ Edit</button>
+  <button id="btn-add-listing" style="display:none">➕ Add</button>
+  <button id="btn-export-json" style="display:none">💾 Export</button>
+  <span class="dirty-badge" id="dirty-badge">0 thay đổi</span>
+</div>
+
+<!-- ===== EDIT MODAL ===== -->
+<div class="bds-modal" id="edit-modal">
+  <div class="bds-modal-card">
+    <h3 id="modal-title">Edit listing</h3>
+    <label>Tên dự án*</label>
+    <input id="f-name" />
+    <div class="row">
+      <div><label>Loại</label><input id="f-type" placeholder="Chung cu" /></div>
+      <div><label>Quận*</label><select id="f-district"></select></div>
+    </div>
+    <div class="row">
+      <div><label>Giá</label><input id="f-price" placeholder="3.2 tỷ hoặc 3-5 tỷ" /></div>
+      <div><label>Diện tích</label><input id="f-area" placeholder="65m2" /></div>
+    </div>
+    <div class="row">
+      <div><label>Phòng ngủ</label><input id="f-beds" /></div>
+      <div><label>WC</label><input id="f-wc" /></div>
+    </div>
+    <label>Địa chỉ</label>
+    <input id="f-addr" />
+    <div class="row">
+      <div><label>Lat*</label><input id="f-lat" type="number" step="0.0000001" /></div>
+      <div><label>Lng*</label><input id="f-lng" type="number" step="0.0000001" /></div>
+    </div>
+    <label>Link BDS</label>
+    <input id="f-link" />
+    <label>Note (investor/broker)</label>
+    <input id="f-note" />
+    <label>Ghi chú riêng</label>
+    <textarea id="f-user-note" rows="2"></textarea>
+    <label><input type="checkbox" id="f-starred" style="width:auto;margin-right:6px" />⭐ Starred</label>
+    <div class="bds-modal-footer">
+      <button id="btn-modal-delete" class="danger" style="display:none">🗑 Delete</button>
+      <button id="btn-modal-cancel">Cancel</button>
+      <button id="btn-modal-save" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESTORE BANNER ===== -->
+<div class="restore-banner" id="restore-banner">
+  <span>📝 Có thay đổi chưa lưu từ lần trước.</span>
+  <button class="primary" id="btn-restore">Restore</button>
+  <button id="btn-discard">Discard</button>
+</div>
+
 <!-- ===== MAP ===== -->
 <div id="map"></div>
 
@@ -265,6 +357,7 @@ map.addLayer(clusterGroup);
 
 // ===== STATE =====
 var activeDistrict = 'all';
+var activeStarredOnly = false;
 var searchQuery = '';
 var sortOrder = 'default';
 
@@ -330,6 +423,26 @@ projects.forEach(function(p, i) {
     badgeEl.textContent = p.district.toUpperCase();
     row1.appendChild(nameEl);
     row1.appendChild(badgeEl);
+    // Starred / user_note / manual indicators
+    if(p.starred) {
+      var starEl = document.createElement('span');
+      starEl.className = 'star-indicator';
+      starEl.textContent = '⭐';
+      row1.appendChild(starEl);
+    }
+    if(p.user_note) {
+      var noteEl = document.createElement('span');
+      noteEl.className = 'user-note-indicator';
+      noteEl.title = p.user_note;
+      noteEl.textContent = '📝';
+      row1.appendChild(noteEl);
+    }
+    if(p.manual) {
+      var manualEl = document.createElement('span');
+      manualEl.className = 'manual-badge';
+      manualEl.textContent = 'M';
+      row1.appendChild(manualEl);
+    }
     // Confidence dot
     var confDot = document.createElement('span');
     var _c = p.price_confidence || 'low';
@@ -446,7 +559,8 @@ function applyFilters() {
     var nameNorm = removeDiacritics(p.name);
     var addrNorm = removeDiacritics(p.addr);
     var searchMatch = !q || nameNorm.indexOf(q) !== -1 || addrNorm.indexOf(q) !== -1;
-    var visible = districtMatch && searchMatch;
+    var starredMatch = !activeStarredOnly || p.starred;
+    var visible = districtMatch && searchMatch && starredMatch;
 
     if(visible) {
       m.listDesktop.classList.remove('hidden');
@@ -492,6 +606,19 @@ function buildFilterButtons(containerId) {
   };
   fEl.appendChild(btnAll);
 
+  // Starred filter chip
+  var btnStarred = document.createElement('button');
+  btnStarred.textContent = '⭐ Only';
+  btnStarred.dataset.filter = 'starred';
+  btnStarred.onclick = function() {
+    activeStarredOnly = !activeStarredOnly;
+    document.querySelectorAll('.filters button[data-filter="starred"]').forEach(function(b){
+      b.classList.toggle('active', activeStarredOnly);
+    });
+    applyFilters();
+  };
+  fEl.appendChild(btnStarred);
+
   districtKeys.forEach(function(d) {
     var count = projects.filter(function(p){return p.district===d;}).length;
     var btn = document.createElement('button');
@@ -501,6 +628,8 @@ function buildFilterButtons(containerId) {
       activeDistrict = d;
       document.querySelectorAll('.filters button').forEach(function(b){b.classList.remove('active')});
       document.querySelectorAll('.filters button[data-district="'+d+'"]').forEach(function(b){b.classList.add('active')});
+      // Keep starred chip state
+      if(activeStarredOnly) document.querySelectorAll('.filters button[data-filter="starred"]').forEach(function(b){b.classList.add('active')});
       applyFilters();
     };
     fEl.appendChild(btn);
@@ -773,6 +902,525 @@ legend.addTo(map);
   // Invalidate map size after layout
   setTimeout(function() { map.invalidateSize(); }, 400);
 })();
+
+// ===== EDIT MODE =====
+var editMode = false;
+var dirty = false;
+var STORAGE_KEY = 'bds_unsaved_projects';
+
+var DISTRICT_OPTIONS = ['Q.1','Q.3','Q.4','Q.5','Q.6','Q.7','Q.8','Q.10','Q.11','Q.12','Go Vap','Binh Thanh','Tan Binh','Tan Phu','Phu Nhuan','Binh Tan','Thu Duc','Cu Chi','Hoc Mon','Binh Chanh','Nha Be','Can Gio'];
+
+// Populate district dropdown
+(function() {
+  var sel = document.getElementById('f-district');
+  DISTRICT_OPTIONS.forEach(function(d) {
+    var opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    sel.appendChild(opt);
+  });
+})();
+
+// ===== POPUP BUILDER =====
+function buildPopupHtml(p, inEditMode) {
+  var bedsWcStr = '';
+  if(p.beds) bedsWcStr += p.beds + ' PN';
+  if(p.wc) bedsWcStr += (bedsWcStr ? ' | ' : '') + p.wc + ' WC';
+  var conf = p.price_confidence || 'low';
+  var confColor = (conf==='high'?'#2e7d32':(conf==='medium'?'#f9a825':'#c62828'));
+  var confLabel = (conf==='high'?'Tin cay CAO':(conf==='medium'?'Tin cay TB':'Tin cay THAP'));
+  var vipLabel = ({diamond:'VIP Kim Cuong',gold:'VIP Vang',silver:'VIP Bac'})[p.vip_tier]||'';
+  var sellerLabel = ({broker_pro:'Moi gioi pro',agency:'Cong ty',individual:'Ca nhan'})[p.seller_type]||'';
+  var ppm2Str = (typeof p.price_per_m2 === 'number') ? (' (~'+p.price_per_m2.toFixed(1)+' tr/m2)') : '';
+  var idx = projects.indexOf(p);
+  var html = '<div style="min-width:200px"><h3 style="margin:0 0 5px;font-size:14px">'+String(idx+1)+'. '+p.name+'</h3>'
+    + '<div style="margin:0 0 4px"><span style="background:'+confColor+';color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">'+confLabel+'</span>'
+    + (vipLabel?' <span style="background:#FFD700;color:#000;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">'+vipLabel+'</span>':'')
+    + (sellerLabel?' <span style="background:#eee;color:#333;padding:1px 6px;border-radius:3px;font-size:10px">'+sellerLabel+'</span>':'')
+    + (p.manual?' <span style="background:#9c27b0;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">Manual</span>':'')
+    + '</div>'
+    + '<div style="font-size:12px;line-height:1.5"><b style="color:#e74c3c">'+(p.price||'')+'</b>'+ppm2Str+'<br>'+(p.area||'')+(bedsWcStr ? ' | '+bedsWcStr : '')+'<br>'+(p.addr||'')+'<br>'+(p.note||'');
+  if(p.user_note) html += '<br><span style="color:#888;font-style:italic">📝 '+p.user_note+'</span>';
+  if(p.link) html += '<br><a href="'+p.link+'" target="_blank" style="color:#0563C1">Xem BDS</a>';
+  if(inEditMode && idx >= 0) {
+    html += '<div style="margin-top:6px;display:flex;gap:5px">'
+      + '<button onclick="openEditModal('+idx+')" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;cursor:pointer;font-size:11px">✏️ Edit</button>'
+      + '<button onclick="deleteProject('+idx+')" style="padding:4px 8px;border:1px solid #e74c3c;border-radius:4px;cursor:pointer;font-size:11px;color:#e74c3c">🗑 Delete</button>'
+      + '<button onclick="toggleStar('+idx+')" style="padding:4px 8px;border:1px solid #f9a825;border-radius:4px;cursor:pointer;font-size:11px">'+(p.starred?'★ Unstar':'☆ Star')+'</button>'
+      + '</div>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
+// ===== MARK DIRTY =====
+function markDirty() {
+  dirty = true;
+  var badge = document.getElementById('dirty-badge');
+  badge.textContent = 'Có thay đổi';
+  badge.classList.add('show');
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+  window.onbeforeunload = function() { return 'Có thay đổi chưa lưu. Rời trang?'; };
+}
+
+// ===== REBUILD SINGLE MARKER CARD =====
+function rebuildMarkerCard(m) {
+  var p = m.proj;
+  var idx = projects.indexOf(p);
+  var color = districtColor(p.district);
+
+  // Update popup
+  m.mk.unbindPopup();
+  m.mk.bindPopup(buildPopupHtml(p, editMode));
+
+  // Update list cards
+  function refreshCard(card) {
+    var row1 = card.querySelector('.pi-row1');
+    if(!row1) return;
+    // Update name
+    var nameEl = row1.querySelector('.pn');
+    if(nameEl) nameEl.textContent = String(idx+1)+'. '+p.name;
+    // Remove old indicators
+    row1.querySelectorAll('.star-indicator,.user-note-indicator,.manual-badge').forEach(function(el){el.remove()});
+    // Re-add indicators after badge (and confidence dot)
+    if(p.starred) {
+      var s = document.createElement('span'); s.className='star-indicator'; s.textContent='⭐'; row1.appendChild(s);
+    }
+    if(p.user_note) {
+      var n = document.createElement('span'); n.className='user-note-indicator'; n.title=p.user_note; n.textContent='📝'; row1.appendChild(n);
+    }
+    if(p.manual) {
+      var mb = document.createElement('span'); mb.className='manual-badge'; mb.textContent='M'; row1.appendChild(mb);
+    }
+    // Update stripe color
+    var stripe = card.querySelector('.pi-stripe');
+    if(stripe) stripe.style.background = color;
+  }
+  refreshCard(m.listDesktop);
+  refreshCard(m.listMobile);
+}
+
+// ===== EDIT MODE TOGGLE =====
+document.getElementById('btn-edit-toggle').onclick = function() {
+  editMode = !editMode;
+  this.classList.toggle('active', editMode);
+  document.getElementById('btn-add-listing').style.display = editMode ? '' : 'none';
+  document.getElementById('btn-export-json').style.display = editMode ? '' : 'none';
+
+  markers.forEach(function(m) {
+    if(editMode) {
+      m.mk.dragging.enable();
+      var iconEl = m.mk.getElement();
+      if(iconEl) iconEl.classList.add('editing');
+    } else {
+      m.mk.dragging.disable();
+      var iconEl = m.mk.getElement();
+      if(iconEl) iconEl.classList.remove('editing');
+    }
+    m.mk.unbindPopup();
+    m.mk.bindPopup(buildPopupHtml(m.proj, editMode));
+  });
+};
+
+// ===== MODAL STATE =====
+var modalEditIdx = -1; // -1 means adding new
+
+function openModal(title, showDelete) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('btn-modal-delete').style.display = showDelete ? '' : 'none';
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+  modalEditIdx = -1;
+}
+
+document.getElementById('btn-modal-cancel').onclick = closeModal;
+document.getElementById('edit-modal').onclick = function(e) {
+  if(e.target === this) closeModal();
+};
+
+// ===== OPEN EDIT MODAL =====
+function openEditModal(idx) {
+  var p = projects[idx];
+  modalEditIdx = idx;
+  document.getElementById('f-name').value = p.name || '';
+  document.getElementById('f-type').value = p.type || '';
+  document.getElementById('f-district').value = p.district || '';
+  document.getElementById('f-price').value = p.price || '';
+  document.getElementById('f-area').value = p.area || '';
+  document.getElementById('f-beds').value = p.beds || '';
+  document.getElementById('f-wc').value = p.wc || '';
+  document.getElementById('f-addr').value = p.addr || '';
+  document.getElementById('f-lat').value = p.lat || '';
+  document.getElementById('f-lng').value = p.lng || '';
+  document.getElementById('f-link').value = p.link || '';
+  document.getElementById('f-note').value = p.note || '';
+  document.getElementById('f-user-note').value = p.user_note || '';
+  document.getElementById('f-starred').checked = !!p.starred;
+  openModal('✏️ Edit: ' + p.name, true);
+}
+
+// ===== DELETE PROJECT =====
+function deleteProject(idx) {
+  var p = projects[idx];
+  if(!confirm('Xoá "' + p.name + '"?')) return;
+  // Remove marker from cluster
+  var m = markers[idx];
+  clusterGroup.removeLayer(m.mk);
+  if(m.listDesktop && m.listDesktop.parentNode) m.listDesktop.parentNode.removeChild(m.listDesktop);
+  if(m.listMobile && m.listMobile.parentNode) m.listMobile.parentNode.removeChild(m.listMobile);
+  // Splice both arrays
+  projects.splice(idx, 1);
+  markers.splice(idx, 1);
+  // Update proj refs (not strictly needed since we use projects.indexOf)
+  closeModal();
+  markDirty();
+}
+
+document.getElementById('btn-modal-delete').onclick = function() {
+  if(modalEditIdx >= 0) deleteProject(modalEditIdx);
+};
+
+// ===== SAVE MODAL =====
+document.getElementById('btn-modal-save').onclick = function() {
+  var name = document.getElementById('f-name').value.trim();
+  var district = document.getElementById('f-district').value;
+  var lat = parseFloat(document.getElementById('f-lat').value);
+  var lng = parseFloat(document.getElementById('f-lng').value);
+  if(!name) { alert('Tên dự án không được để trống'); return; }
+  if(!district) { alert('Chọn quận'); return; }
+  if(isNaN(lat) || isNaN(lng)) { alert('Lat/Lng phải là số'); return; }
+
+  if(modalEditIdx >= 0) {
+    // Edit existing
+    var p = projects[modalEditIdx];
+    p.name = name;
+    p.type = document.getElementById('f-type').value.trim() || 'Chung cu';
+    p.district = district;
+    p.price = document.getElementById('f-price').value.trim();
+    p.area = document.getElementById('f-area').value.trim();
+    p.beds = document.getElementById('f-beds').value.trim();
+    p.wc = document.getElementById('f-wc').value.trim();
+    p.addr = document.getElementById('f-addr').value.trim();
+    p.lat = lat;
+    p.lng = lng;
+    p.link = document.getElementById('f-link').value.trim();
+    p.note = document.getElementById('f-note').value.trim();
+    p.user_note = document.getElementById('f-user-note').value.trim();
+    p.starred = document.getElementById('f-starred').checked;
+    // Update marker position
+    var m = markers[modalEditIdx];
+    m.mk.setLatLng([lat, lng]);
+    rebuildMarkerCard(m);
+    markDirty();
+    closeModal();
+  } else {
+    // Add new listing
+    var newP = {
+      name: name,
+      type: document.getElementById('f-type').value.trim() || 'Chung cu',
+      district: district,
+      price: document.getElementById('f-price').value.trim(),
+      area: document.getElementById('f-area').value.trim(),
+      beds: document.getElementById('f-beds').value.trim(),
+      wc: document.getElementById('f-wc').value.trim(),
+      addr: document.getElementById('f-addr').value.trim(),
+      lat: lat,
+      lng: lng,
+      link: document.getElementById('f-link').value.trim(),
+      note: document.getElementById('f-note').value.trim(),
+      user_note: document.getElementById('f-user-note').value.trim(),
+      starred: document.getElementById('f-starred').checked,
+      manual: true
+    };
+    addNewProject(newP);
+    closeModal();
+  }
+};
+
+// ===== ADD NEW PROJECT (shared by modal save + map click) =====
+function addNewProject(p) {
+  projects.push(p);
+  var i = projects.length - 1;
+  var color = districtColor(p.district);
+
+  var icon = L.divIcon({
+    className:'cm',
+    html:'<div style="background:'+color+';color:white;border:2px solid '+color+';border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,.3)">'+String(i+1)+'</div>',
+    iconSize:[26,26],iconAnchor:[13,13]
+  });
+
+  var mk = L.marker([p.lat, p.lng], {icon:icon});
+  mk.proj = p;
+  if(editMode) mk.dragging.enable();
+
+  mk.bindPopup(buildPopupHtml(p, editMode));
+  mk.bindTooltip(p.name, {direction:'right', offset:[13,0], className:'bds-name-label'});
+
+  mk.on('dragend', function(e) {
+    var ll = e.target.getLatLng();
+    p.lat = ll.lat;
+    p.lng = ll.lng;
+    markDirty();
+  });
+
+  mk.on('popupopen', function() {
+    var idx = projects.indexOf(p);
+    highlightListItem(idx);
+  });
+
+  // Build cards
+  var bedsWcLocal = '';
+  if(p.beds) bedsWcLocal += p.beds + ' PN';
+  if(p.wc) bedsWcLocal += (bedsWcLocal ? ' | ' : '') + p.wc + ' WC';
+
+  function makeNewCard() {
+    var div = document.createElement('div');
+    div.className = 'pi';
+    div.dataset.district = p.district;
+    div.dataset.idx = String(i);
+
+    var stripe = document.createElement('div');
+    stripe.className = 'pi-stripe';
+    stripe.style.background = color;
+
+    var body = document.createElement('div');
+    body.className = 'pi-body';
+
+    var row1 = document.createElement('div');
+    row1.className = 'pi-row1';
+    var nameEl = document.createElement('div');
+    nameEl.className = 'pn';
+    nameEl.textContent = String(i+1)+'. '+p.name;
+    var badgeEl = document.createElement('span');
+    badgeEl.className = 'badge badge-'+p.district;
+    badgeEl.textContent = p.district.toUpperCase();
+    row1.appendChild(nameEl);
+    row1.appendChild(badgeEl);
+    if(p.starred) {
+      var s = document.createElement('span'); s.className='star-indicator'; s.textContent='⭐'; row1.appendChild(s);
+    }
+    if(p.user_note) {
+      var n = document.createElement('span'); n.className='user-note-indicator'; n.title=p.user_note; n.textContent='📝'; row1.appendChild(n);
+    }
+    if(p.manual) {
+      var mb = document.createElement('span'); mb.className='manual-badge'; mb.textContent='M'; row1.appendChild(mb);
+    }
+
+    var row2 = document.createElement('div');
+    row2.className = 'pi-row2';
+    if(p.price) {
+      var priceEl = document.createElement('span');
+      priceEl.className = 'price-chip';
+      priceEl.textContent = p.price;
+      row2.appendChild(priceEl);
+    }
+    if(p.area) {
+      var areaEl = document.createElement('span');
+      areaEl.className = 'pf';
+      areaEl.textContent = p.area;
+      row2.appendChild(areaEl);
+    }
+    if(bedsWcLocal) {
+      var bedsEl = document.createElement('span');
+      bedsEl.className = 'pf';
+      bedsEl.textContent = bedsWcLocal;
+      row2.appendChild(bedsEl);
+    }
+    var row3 = document.createElement('div');
+    row3.className = 'pf-addr';
+    row3.textContent = p.addr || '';
+
+    body.appendChild(row1);
+    body.appendChild(row2);
+    body.appendChild(row3);
+    div.appendChild(stripe);
+    div.appendChild(body);
+    return div;
+  }
+
+  var cardDesktop = makeNewCard();
+  var cardMobile = makeNewCard();
+
+  cardDesktop.onclick = (function(pt, m) { return function() { map.setView([pt.lat,pt.lng],17); m.openPopup(); }; })(p, mk);
+  cardMobile.onclick = (function(pt, m) { return function() { map.setView([pt.lat,pt.lng],17); m.openPopup(); }; })(p, mk);
+
+  listEl.appendChild(cardDesktop);
+  listMobileEl.appendChild(cardMobile);
+
+  var mEntry = {mk:mk, proj:p, data:p, listDesktop:cardDesktop, listMobile:cardMobile};
+  markers.push(mEntry);
+  clusterGroup.addLayer(mk);
+
+  markDirty();
+}
+
+// ===== TOGGLE STAR =====
+function toggleStar(idx) {
+  var p = projects[idx];
+  p.starred = !p.starred;
+  var m = markers[idx];
+  rebuildMarkerCard(m);
+  // Re-open popup to reflect change
+  if(m.mk.isPopupOpen()) {
+    m.mk.unbindPopup();
+    m.mk.bindPopup(buildPopupHtml(p, editMode));
+    m.mk.openPopup();
+  }
+  markDirty();
+}
+
+// ===== ADD LISTING — MAP CLICK MODE =====
+var addPickMode = false;
+document.getElementById('btn-add-listing').onclick = function() {
+  if(addPickMode) return;
+  addPickMode = true;
+  document.getElementById('map').style.cursor = 'crosshair';
+  map.once('click', function(e) {
+    addPickMode = false;
+    document.getElementById('map').style.cursor = '';
+    // Pre-fill lat/lng, clear rest
+    modalEditIdx = -1;
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-type').value = '';
+    document.getElementById('f-district').value = '';
+    document.getElementById('f-price').value = '';
+    document.getElementById('f-area').value = '';
+    document.getElementById('f-beds').value = '';
+    document.getElementById('f-wc').value = '';
+    document.getElementById('f-addr').value = '';
+    document.getElementById('f-lat').value = e.latlng.lat.toFixed(7);
+    document.getElementById('f-lng').value = e.latlng.lng.toFixed(7);
+    document.getElementById('f-link').value = '';
+    document.getElementById('f-note').value = '';
+    document.getElementById('f-user-note').value = '';
+    document.getElementById('f-starred').checked = false;
+    openModal('➕ Add listing', false);
+  });
+};
+
+// ===== EXPORT JSON =====
+document.getElementById('btn-export-json').onclick = function() {
+  var blob = new Blob([JSON.stringify(projects, null, 2)], {type:'application/json;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'projects.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  alert('Đã download projects.json. Hãy thay file output/projects.json rồi commit.');
+  localStorage.removeItem(STORAGE_KEY);
+  dirty = false;
+  document.getElementById('dirty-badge').classList.remove('show');
+  window.onbeforeunload = null;
+};
+
+// ===== DRAG END for existing markers =====
+markers.forEach(function(m) {
+  m.proj = m.data; // alias proj -> data for existing markers built before edit mode code
+  m.mk.on('dragend', function(e) {
+    var ll = e.target.getLatLng();
+    m.proj.lat = ll.lat;
+    m.proj.lng = ll.lng;
+    markDirty();
+  });
+});
+
+// ===== RESTORE BANNER =====
+(function() {
+  var saved = localStorage.getItem(STORAGE_KEY);
+  if(!saved) return;
+  try {
+    var parsed = JSON.parse(saved);
+    if(!Array.isArray(parsed) || parsed.length === 0) return;
+    // Show banner
+    document.getElementById('restore-banner').classList.add('show');
+  } catch(e) { localStorage.removeItem(STORAGE_KEY); }
+})();
+
+document.getElementById('btn-restore').onclick = function() {
+  var saved = localStorage.getItem(STORAGE_KEY);
+  if(!saved) return;
+  try {
+    var parsed = JSON.parse(saved);
+    // Clear current markers + cards
+    clusterGroup.clearLayers();
+    markers.forEach(function(m) {
+      if(m.listDesktop && m.listDesktop.parentNode) m.listDesktop.parentNode.removeChild(m.listDesktop);
+      if(m.listMobile && m.listMobile.parentNode) m.listMobile.parentNode.removeChild(m.listMobile);
+    });
+    markers.length = 0;
+    projects.length = 0;
+    // Re-populate
+    parsed.forEach(function(p) {
+      projects.push(p);
+    });
+    // Rebuild markers for all projects
+    projects.forEach(function(p) {
+      var i = projects.indexOf(p);
+      var color = districtColor(p.district);
+      var icon = L.divIcon({
+        className:'cm',
+        html:'<div style="background:'+color+';color:white;border:2px solid '+color+';border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,.3)">'+String(i+1)+'</div>',
+        iconSize:[26,26],iconAnchor:[13,13]
+      });
+      var mk = L.marker([p.lat, p.lng], {icon:icon});
+      mk.proj = p;
+      mk.bindPopup(buildPopupHtml(p, editMode));
+      mk.bindTooltip(p.name, {direction:'right', offset:[13,0], className:'bds-name-label'});
+      mk.on('dragend', function(e) {
+        var ll = e.target.getLatLng();
+        p.lat = ll.lat; p.lng = ll.lng;
+        markDirty();
+      });
+      mk.on('popupopen', function() { highlightListItem(projects.indexOf(p)); });
+
+      var bedsWcR = '';
+      if(p.beds) bedsWcR += p.beds + ' PN';
+      if(p.wc) bedsWcR += (bedsWcR ? ' | ' : '') + p.wc + ' WC';
+
+      function makeRestoredCard() {
+        var div = document.createElement('div');
+        div.className = 'pi'; div.dataset.district = p.district; div.dataset.idx = String(i);
+        var stripe = document.createElement('div'); stripe.className='pi-stripe'; stripe.style.background=color;
+        var body = document.createElement('div'); body.className='pi-body';
+        var row1 = document.createElement('div'); row1.className='pi-row1';
+        var nameEl = document.createElement('div'); nameEl.className='pn'; nameEl.textContent=String(i+1)+'. '+p.name;
+        var badgeEl = document.createElement('span'); badgeEl.className='badge badge-'+p.district; badgeEl.textContent=p.district.toUpperCase();
+        row1.appendChild(nameEl); row1.appendChild(badgeEl);
+        if(p.starred){var s=document.createElement('span');s.className='star-indicator';s.textContent='⭐';row1.appendChild(s);}
+        if(p.user_note){var n=document.createElement('span');n.className='user-note-indicator';n.title=p.user_note;n.textContent='📝';row1.appendChild(n);}
+        if(p.manual){var mb=document.createElement('span');mb.className='manual-badge';mb.textContent='M';row1.appendChild(mb);}
+        var row2=document.createElement('div');row2.className='pi-row2';
+        if(p.price){var pe=document.createElement('span');pe.className='price-chip';pe.textContent=p.price;row2.appendChild(pe);}
+        if(p.area){var ae=document.createElement('span');ae.className='pf';ae.textContent=p.area;row2.appendChild(ae);}
+        if(bedsWcR){var be=document.createElement('span');be.className='pf';be.textContent=bedsWcR;row2.appendChild(be);}
+        var row3=document.createElement('div');row3.className='pf-addr';row3.textContent=p.addr||'';
+        body.appendChild(row1);body.appendChild(row2);body.appendChild(row3);
+        div.appendChild(stripe);div.appendChild(body);
+        return div;
+      }
+      var cd = makeRestoredCard(); var cm2 = makeRestoredCard();
+      cd.onclick=(function(pt,m2){return function(){map.setView([pt.lat,pt.lng],17);m2.openPopup();};})(p,mk);
+      cm2.onclick=(function(pt,m2){return function(){map.setView([pt.lat,pt.lng],17);m2.openPopup();};})(p,mk);
+      listEl.appendChild(cd); listMobileEl.appendChild(cm2);
+      var mEntry={mk:mk,proj:p,data:p,listDesktop:cd,listMobile:cm2};
+      markers.push(mEntry);
+      clusterGroup.addLayer(mk);
+    });
+    document.getElementById('restore-banner').classList.remove('show');
+    dirty = true;
+    var badge = document.getElementById('dirty-badge');
+    badge.textContent = 'Có thay đổi'; badge.classList.add('show');
+  } catch(e) { alert('Lỗi restore: ' + e.message); }
+};
+
+document.getElementById('btn-discard').onclick = function() {
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('restore-banner').classList.remove('show');
+};
 </script>
 </body>
 </html>

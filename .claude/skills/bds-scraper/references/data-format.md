@@ -28,6 +28,9 @@ Each entry is a JSON object with the following fields. Only `name`, `district`, 
 | `trust_score` | number | no | `75` | 0–100, computed by `score_listings.py`. Cao = đáng tin. |
 | `price_per_m2` | number | no | `52.5` | Triệu VND/m², derived from price midpoint ÷ area midpoint. |
 | `price_confidence` | string | no | `"high"` | One of `"high"`, `"medium"`, `"low"`. Computed by `score_listings.py`. |
+| `starred` | boolean | no | `false` | User-marked favorite (⭐ in map UI). Preserved through re-scoring. |
+| `user_note` | string | no | `"da lien he chu"` | Private note from user (distinct from `note` which holds investor/broker info). Preserved through re-scoring. |
+| `manual` | boolean | no | `false` | `true` if listing was added manually in the browser (not from scrape). Preserved through re-scoring. |
 
 ## Canonical district keys
 
@@ -59,7 +62,10 @@ No Vietnamese diacritics (ASCII only) to keep filename-safe and Excel/HTML compa
     "note": "Van Thai Land, 3 block",
     "link": "https://batdongsan.com.vn/ban-can-ho-chung-cu-du-an-topaz-elite",
     "lat": 10.7392189,
-    "lng": 106.6797322
+    "lng": 106.6797322,
+    "starred": false,
+    "user_note": "",
+    "manual": false
   }
 ]
 ```

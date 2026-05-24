@@ -79,6 +79,19 @@ Convert answers to canonical terms (e.g., "Quận 8" → `quan-8`, "3-5 tỷ" �
 | Leaflet tiles blank | Confirm HTTPS + `{s}.tile.openstreetmap.org` subdomain works |
 | Duplicate listings | Gather min–max price, keep one entry per project |
 
+## Editing listings in the browser
+
+The generated `index.html` includes an Edit Mode toggle. Workflow:
+
+1. Open `index.html` in a browser.
+2. Click **✏️ Edit** (top-right).
+3. Drag markers to fix coordinates / click marker → Edit/Delete/Star / click ➕ Add → place new listing.
+4. Click **💾 Export** to download an updated `projects.json`.
+5. Replace `output/projects.json` with the downloaded file and commit.
+6. (Optional) Re-run `generate_map.py` + `generate_excel.py` to refresh other outputs.
+
+Schema additions for in-browser edits: `starred` (bool), `user_note` (string), `manual` (bool). These are preserved through re-scoring.
+
 ## File references
 
 - `references/workflow-detailed.md` — full procedure for steps 1–5 (scrape patterns, coord extraction, Excel/map building)

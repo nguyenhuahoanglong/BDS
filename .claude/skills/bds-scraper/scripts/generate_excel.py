@@ -95,7 +95,7 @@ def create_bds_excel(projects, output_path, title="BDS Listings"):
     )
 
     # Headers
-    headers = ["STT", "Du An", "Loai", "Khoang Gia", "Gia/m2", "Tin Cay", "Loai Tin", "Nguoi Dang", "Dien Tich", "Phong Ngu", "WC", "Dia Chi", "Quan", "Ghi Chu", "Link BDS"]
+    headers = ["STT", "Du An", "Loai", "Khoang Gia", "Gia/m2", "Tin Cay", "Loai Tin", "Nguoi Dang", "Dien Tich", "Phong Ngu", "WC", "Dia Chi", "Quan", "Ghi Chu", "Sao", "Ghi chu rieng", "Link BDS"]
     for col, h in enumerate(headers, 1):
         cell = ws1.cell(row=1, column=col, value=h)
         cell.font = header_font
@@ -139,7 +139,10 @@ def create_bds_excel(projects, output_path, title="BDS Listings"):
         conf_cell.font = Font(bold=True)
         conf_cell.fill = confidence_fills.get(conf, confidence_fills["low"])
 
-        ws1.cell(row=row, column=7, value=vip_label.get(p.get("vip_tier", "normal"), "")).alignment = Alignment(horizontal="center")
+        loai_tin_val = vip_label.get(p.get("vip_tier", "normal"), "")
+        if p.get("manual"):
+            loai_tin_val = (loai_tin_val + " / Manual").strip(" /")
+        ws1.cell(row=row, column=7, value=loai_tin_val).alignment = Alignment(horizontal="center")
         ws1.cell(row=row, column=8, value=seller_label.get(p.get("seller_type", "unknown"), ""))
         ws1.cell(row=row, column=9, value=p.get("area", ""))
         ws1.cell(row=row, column=10, value=p.get("beds", "")).alignment = Alignment(horizontal="center")
@@ -148,37 +151,43 @@ def create_bds_excel(projects, output_path, title="BDS Listings"):
         ws1.cell(row=row, column=13, value=p.get("district", ""))
         ws1.cell(row=row, column=14, value=p.get("note", ""))
 
-        # Hyperlink
+        # Starred indicator (col 15)
+        ws1.cell(row=row, column=15, value=("★" if p.get("starred") else "")).alignment = Alignment(horizontal="center")
+
+        # User note (col 16)
+        ws1.cell(row=row, column=16, value=p.get("user_note", ""))
+
+        # Hyperlink (col 17)
         link = p.get("link", "")
         if link:
-            cell = ws1.cell(row=row, column=15, value="Xem BDS")
+            cell = ws1.cell(row=row, column=17, value="Xem BDS")
             cell.hyperlink = link
             cell.font = Font(color="0563C1", underline="single")
         else:
-            ws1.cell(row=row, column=15, value="")
+            ws1.cell(row=row, column=17, value="")
 
         # Color-code by district (skip Tin Cay column to keep its own color)
         district = p.get("district", "")
         color = get_district_color(district)
         if color:
             fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
-            for col in range(1, 16):
+            for col in range(1, 18):
                 if col == 6:
                     continue
                 ws1.cell(row=row, column=col).fill = fill
 
         # Border all cells
-        for col in range(1, 16):
+        for col in range(1, 18):
             ws1.cell(row=row, column=col).border = thin_border
 
     # Column widths
-    col_widths = [5, 22, 12, 15, 9, 9, 11, 16, 12, 10, 5, 30, 12, 25, 12]
+    col_widths = [5, 22, 12, 15, 9, 9, 11, 16, 12, 10, 5, 30, 12, 25, 5, 25, 12]
     for i, w in enumerate(col_widths, 1):
         ws1.column_dimensions[get_column_letter(i)].width = w
 
     # Freeze panes and auto-filter
     ws1.freeze_panes = "A2"
-    ws1.auto_filter.ref = f"A1:O{len(projects) + 1}"
+    ws1.auto_filter.ref = f"A1:Q{len(projects) + 1}"
 
     # ===== Sheet 2: Coordinates for Google My Maps =====
     ws2 = wb.create_sheet("Toa Do (Map)")
