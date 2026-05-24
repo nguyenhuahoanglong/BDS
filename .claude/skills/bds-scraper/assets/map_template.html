@@ -596,6 +596,7 @@ function buildFilterButtons(containerId) {
   btnAll.className = 'active';
   btnAll.onclick = function() {
     activeDistrict = 'all';
+    activeStarredOnly = false;
     document.querySelectorAll('.filters button').forEach(function(b){b.classList.remove('active')});
     // Activate both "Tat ca" buttons
     document.querySelectorAll('.filters button:first-child').forEach(function(b){b.classList.add('active')});
@@ -913,6 +914,10 @@ var DISTRICT_OPTIONS = ['Q.1','Q.3','Q.4','Q.5','Q.6','Q.7','Q.8','Q.10','Q.11',
 // Populate district dropdown
 (function() {
   var sel = document.getElementById('f-district');
+  var emptyOpt = document.createElement('option');
+  emptyOpt.value = '';
+  emptyOpt.textContent = '-- chọn --';
+  sel.appendChild(emptyOpt);
   DISTRICT_OPTIONS.forEach(function(d) {
     var opt = document.createElement('option');
     opt.value = d;
@@ -1062,6 +1067,15 @@ function openEditModal(idx) {
   openModal('✏️ Edit: ' + p.name, true);
 }
 
+// ===== REBUILD ALL POPUPS + CARDS (call after delete to fix stale indices) =====
+function rebuildAllPopupsAndCards() {
+  markers.forEach(function(m) {
+    m.mk.unbindPopup();
+    m.mk.bindPopup(buildPopupHtml(m.proj, editMode));
+    rebuildMarkerCard(m);
+  });
+}
+
 // ===== DELETE PROJECT =====
 function deleteProject(idx) {
   var p = projects[idx];
@@ -1074,7 +1088,8 @@ function deleteProject(idx) {
   // Splice both arrays
   projects.splice(idx, 1);
   markers.splice(idx, 1);
-  // Update proj refs (not strictly needed since we use projects.indexOf)
+  // Rebuild all remaining popups + cards to fix stale index references
+  rebuildAllPopupsAndCards();
   closeModal();
   markDirty();
 }
