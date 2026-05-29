@@ -20,8 +20,12 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
 #plist-wrap{flex:1;overflow-y:auto}
 
 /* Header */
-.ph{background:linear-gradient(135deg,#2E86AB,#1a5c7a);color:#fff;padding:14px;text-align:center;flex-shrink:0}
+.ph{background:linear-gradient(135deg,#2E86AB,#1a5c7a);color:#fff;padding:12px 14px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .ph h2{font-size:15px;margin-bottom:3px}.ph p{font-size:11px;opacity:.85}
+.ph-txt{min-width:0;text-align:left}.ph-txt h2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Loan-calculator link in headers */
+.calc-link{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;color:#fff;background:rgba(255,255,255,.18);padding:9px 13px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;line-height:1.2;white-space:nowrap;transition:background .15s}
+.calc-link:hover{background:rgba(255,255,255,.3)}
 
 /* Search bar */
 .search-bar{padding:8px 12px;border-bottom:1px solid #eee;flex-shrink:0;display:flex;gap:6px;align-items:center}
@@ -114,7 +118,10 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
     background:linear-gradient(135deg,#2E86AB,#1a5c7a);
     color:#fff;
     padding:10px 14px;
-    text-align:center;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
   }
   .sh-header h2{font-size:15px;margin-bottom:2px}
   .sh-header p{font-size:11px;opacity:.85}
@@ -262,7 +269,7 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
 
 <!-- ===== DESKTOP PANEL ===== -->
 <div id="panel">
-  <div class="ph"><h2>{{TITLE}}</h2><p>{{SUBTITLE}}</p></div>
+  <div class="ph"><div class="ph-txt"><h2>{{TITLE}}</h2><p>{{SUBTITLE}}</p></div><a href="loan-calculator.html" class="calc-link">🧮 Tính lãi vay</a></div>
   <div class="search-bar">
     <input type="text" id="search-desktop" placeholder="Tim kiem du an..." autocomplete="off"/>
     <select class="sort-select" id="sort-desktop">
@@ -280,7 +287,7 @@ body{font-family:'Segoe UI',sans-serif;overflow:hidden}
 <div id="sheet-overlay"></div>
 <div id="sheet" style="display:none">
   <div id="drag-handle"><div id="drag-handle-bar"></div></div>
-  <div class="sh-header"><h2>{{TITLE}}</h2><p>{{SUBTITLE}}</p></div>
+  <div class="sh-header"><div class="ph-txt"><h2>{{TITLE}}</h2><p>{{SUBTITLE}}</p></div><a href="loan-calculator.html" class="calc-link">🧮 Tính lãi</a></div>
   <div class="search-bar">
     <input type="text" id="search-mobile" placeholder="Tim kiem du an..." autocomplete="off"/>
     <select class="sort-select" id="sort-mobile">
