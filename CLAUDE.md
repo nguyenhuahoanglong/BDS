@@ -97,3 +97,11 @@ schema. Minimum fields per listing: `name`, `type`, `price`, `area`, `beds`,
 | PN / WC | Bedroom / Bathroom |
 | Sổ hồng | Pink book (ownership title) |
 | tỷ | Billion VND (≈ 40k USD) |
+
+## Loan calculator data
+
+`loan-calculator.html` syncs its scenarios with `data/scenarios.json` (format in
+`data/README.md`). To read what Long entered, read that file. To change it, edit
+the file and bump `updated` — the page auto-loads a file whose `updated` it has
+not seen. The page can also commit the file itself via the GitHub Contents API
+with a token kept in the browser.
