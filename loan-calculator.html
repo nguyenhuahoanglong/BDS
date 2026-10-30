@@ -65,6 +65,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--t
 .summary .item .val{font-size:15px;font-weight:600;color:var(--primary-dark)}
 .summary .item .val.big{font-size:18px;color:var(--danger)}
 .summary .full{grid-column:1/-1}
+.summary .item .split{font-size:12px;color:var(--text-muted)}
 
 /* Traffic light pill */
 .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;background:#f0f0f0}
@@ -558,20 +559,29 @@ function calculateSchedule(s, opts){
   };
 }
 
-function worstCasePayment(s){
+function worstCaseBreakdown(s){
   const termMonths = s.termYears * 12;
   const monthlyPrincipal = s.loan / termMonths;
   const promoMonthsCapped = Math.min(s.promoMonths, termMonths - 1);
   const balanceAtFloat = s.loan - promoMonthsCapped * monthlyPrincipal;
   const interest = balanceAtFloat * (s.floatRate / 100 / 12);
-  return monthlyPrincipal + interest;
+  return {principal: monthlyPrincipal, interest, total: monthlyPrincipal + interest};
 }
 
-function firstMonthPayment(s){
+function worstCasePayment(s){
+  return worstCaseBreakdown(s).total;
+}
+
+function firstMonthBreakdown(s){
   const termMonths = s.termYears * 12;
   const monthlyPrincipal = s.loan / termMonths;
   const rate = (s.promoMonths > 0 ? s.promoRate : s.floatRate) / 100 / 12;
-  return monthlyPrincipal + s.loan * rate;
+  const interest = s.loan * rate;
+  return {principal: monthlyPrincipal, interest, total: monthlyPrincipal + interest};
+}
+
+function splitLine(b){
+  return `<span class="split">Gốc ${formatVND(b.principal)} ₫ · Lãi ${formatVND(b.interest)} ₫</span>`;
 }
 
 function computeDTI(worstPayment, s){
@@ -649,15 +659,17 @@ function renderLoanButtons(){
 }
 
 function renderSummary(result){
-  const wp = worstCasePayment(state);
-  const fp = firstMonthPayment(state);
+  const wb = worstCaseBreakdown(state);
+  const fb = firstMonthBreakdown(state);
+  const wp = wb.total;
+  const fp = fb.total;
   const dti = computeDTI(wp, state);
   const totalPay = state.loan + result.totalInterest + result.totalFee;
   const maxLoan = suggestMaxLoan(state);
 
   let html = '';
-  html += `<div class="item"><span class="lbl">Trả tháng đầu (${state.promoMonths > 0 ? 'ưu đãi' : 'thả nổi'})</span><span class="val">${formatVND(fp)} ₫</span></div>`;
-  html += `<div class="item"><span class="lbl">Trả tháng đầu sau ưu đãi <em style="color:var(--danger);font-style:normal">(worst)</em></span><span class="val big">${formatVND(wp)} ₫</span></div>`;
+  html += `<div class="item"><span class="lbl">Trả tháng đầu (${state.promoMonths > 0 ? 'ưu đãi' : 'thả nổi'})</span><span class="val">${formatVND(fp)} ₫</span>${splitLine(fb)}</div>`;
+  html += `<div class="item"><span class="lbl">Trả tháng đầu sau ưu đãi <em style="color:var(--danger);font-style:normal">(worst)</em></span><span class="val big">${formatVND(wp)} ₫</span>${splitLine(wb)}</div>`;
 
   if (dti){
     html += `<div class="item"><span class="lbl">DTI tính theo lương</span><span class="val">${(dti.dtiSalary*100).toFixed(1)}% &nbsp; ${pill(dti.statusSalary, statusLabel(dti.statusSalary))}</span></div>`;
