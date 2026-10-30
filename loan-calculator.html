@@ -134,6 +134,7 @@ table.amort .prepay-btn.planned{background:#E8F7EE;border-color:var(--success);c
 .save-grid select{flex:1;min-width:160px}
 .btn{padding:8px 14px;border:1.5px solid var(--border);background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text);transition:all .15s;white-space:nowrap}
 .btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn:disabled{opacity:.5;cursor:wait}
 .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
 .btn.primary:hover{background:var(--primary-dark);color:#fff}
 .btn.danger{color:var(--danger);border-color:#f3c7c4}
@@ -358,15 +359,23 @@ table.amort .prepay-btn.planned{background:#E8F7EE;border-color:var(--success);c
       <button class="btn danger" id="btn-delete-preset">Xoá preset</button>
     </div>
     <div class="save-grid" style="margin-top:10px">
-      <button class="btn" id="btn-export">Tải xuống JSON</button>
+      <button class="btn" id="btn-export">Tải xuống scenarios.json</button>
+      <button class="btn" id="btn-copy-json">Copy JSON</button>
       <button class="btn" id="btn-import">Nạp từ JSON</button>
       <input type="file" id="import-file" accept="application/json,.json" style="display:none">
       <button class="btn" id="btn-share">Sao chép link chia sẻ</button>
       <button class="btn" id="btn-reset">Reset mặc định</button>
     </div>
     <div class="autosave-status" id="autosave-status">Đang chờ...</div>
+    <div class="save-grid" style="margin-top:14px">
+      <button class="btn primary" id="btn-gh-save">Lưu lên GitHub</button>
+      <button class="btn" id="btn-gh-load">Nạp từ GitHub</button>
+      <button class="btn" id="btn-gh-settings">Cài đặt GitHub token</button>
+    </div>
+    <div class="autosave-status" id="gh-status">GitHub: đang kiểm tra data/scenarios.json...</div>
     <div class="hint" style="margin-top:8px">
-      <strong>Cross-device:</strong> "Sao chép link" mã hoá toàn bộ trạng thái vào URL. Gửi link cho chính mình (Zalo/email) rồi mở trên máy khác là load lại. JSON dùng để backup hoặc gửi cho người khác.
+      <strong>Đồng bộ với GitHub:</strong> toàn bộ phương án (trạng thái hiện tại + preset) lưu ở <code>data/scenarios.json</code> trong repo. Trang tự nạp file này khi nó có bản mới (ví dụ Claude vừa sửa). "Lưu lên GitHub" cần token cá nhân (chỉ lưu trong trình duyệt này). Không có token: bấm "Tải xuống scenarios.json" rồi commit file, hoặc "Copy JSON" dán vào chat.<br>
+      <strong>Cross-device:</strong> "Sao chép link" mã hoá trạng thái hiện tại vào URL để mở trên máy khác.
     </div>
   </section>
 
@@ -404,6 +413,35 @@ table.amort .prepay-btn.planned{background:#E8F7EE;border-color:var(--success);c
     <div class="modal-actions">
       <button class="btn" id="save-cancel">Huỷ</button>
       <button class="btn primary" id="save-confirm">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: GITHUB SETTINGS ===== -->
+<div class="modal-overlay" id="gh-modal">
+  <div class="modal">
+    <h3>Cài đặt đồng bộ GitHub</h3>
+    <div class="modal-body">
+      <div class="field">
+        <label>Personal access token (fine-grained)</label>
+        <input type="password" id="gh-token" placeholder="github_pat_..." autocomplete="off">
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Repo (owner/tên)</label>
+        <input type="text" id="gh-repo" placeholder="nguyenhuahoanglong/BDS">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <div class="field"><label>Nhánh</label><input type="text" id="gh-branch" placeholder="master"></div>
+        <div class="field"><label>Đường dẫn file</label><input type="text" id="gh-path" placeholder="data/scenarios.json"></div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+        Token chỉ lưu trong localStorage của trình duyệt này, không gửi đi đâu ngoài api.github.com. Tạo token: GitHub → Settings → Developer settings → Fine-grained tokens, chỉ chọn repo BDS, quyền <strong>Contents: Read and write</strong>.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="gh-clear">Xoá token</button>
+      <button class="btn" id="gh-cancel">Huỷ</button>
+      <button class="btn primary" id="gh-confirm">Lưu &amp; kiểm tra</button>
     </div>
   </div>
 </div>
@@ -998,6 +1036,13 @@ function bindInputs(){
   document.getElementById('btn-export').addEventListener('click', exportJSON);
   document.getElementById('btn-import').addEventListener('click', () => document.getElementById('import-file').click());
   document.getElementById('import-file').addEventListener('change', importJSON);
+  document.getElementById('btn-copy-json').addEventListener('click', copyScenarioJSON);
+  document.getElementById('btn-gh-save').addEventListener('click', ghSave);
+  document.getElementById('btn-gh-load').addEventListener('click', ghLoad);
+  document.getElementById('btn-gh-settings').addEventListener('click', openGhModal);
+  document.getElementById('gh-cancel').addEventListener('click', closeGhModal);
+  document.getElementById('gh-clear').addEventListener('click', clearGhToken);
+  document.getElementById('gh-confirm').addEventListener('click', confirmGhSettings);
   document.getElementById('btn-share').addEventListener('click', copyShareURL);
   document.getElementById('btn-reset').addEventListener('click', resetState);
 
@@ -1105,25 +1150,65 @@ function deleteCurrentPreset(){
 }
 
 // ========== EXPORT/IMPORT ==========
-function exportJSON(){
-  const payload = {
-    format: 'bds-loancalc',
+// File format shared with the repo (data/scenarios.json):
+// { format, version, updated, current: <state|null>, presets: {name: state} }
+const SCENARIO_FORMAT = 'bds-loancalc-scenarios';
+
+function buildScenarioFile(){
+  return {
+    format: SCENARIO_FORMAT,
     version: 1,
-    exported: new Date().toISOString(),
-    state: state
+    updated: new Date().toISOString(),
+    current: state,
+    presets: loadPresets()
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+}
+function parseScenarioFile(data){
+  if (data && data.format === SCENARIO_FORMAT){
+    if (data.version !== 1) throw new Error('Phiên bản không tương thích');
+    return data;
+  }
+  // Legacy single-state export
+  if (data && data.format === 'bds-loancalc'){
+    if (data.version !== 1) throw new Error('Phiên bản không tương thích');
+    return {format: SCENARIO_FORMAT, version: 1, updated: data.exported || '', current: data.state, presets: {}};
+  }
+  throw new Error('Không phải file BDS loan calc');
+}
+// Repo presets overwrite same-name local presets; local-only presets are kept.
+function applyScenarioFile(data, opts={}){
+  const presets = loadPresets();
+  const incoming = data.current ? {...DEFAULT_STATE, ...data.current} : null;
+  if (opts.backupLocal && incoming && JSON.stringify(state) !== JSON.stringify(incoming)){
+    presets['Máy này trước khi nạp repo ' + new Date().toLocaleString('vi-VN')] = JSON.parse(JSON.stringify(state));
+  }
+  Object.assign(presets, data.presets || {});
+  try { localStorage.setItem(LS_PRESETS, JSON.stringify(presets)); } catch(e){}
+  if (incoming) state = incoming;
+  renderPresetDropdown();
+  onStateChange();
+}
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(buildScenarioFile(), null, 2) + '\n'], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  const d = new Date();
-  const stamp = d.toISOString().slice(0,10).replace(/-/g,'');
-  a.download = `loancalc-${stamp}.json`;
+  a.download = 'scenarios.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  toast('Đã tải JSON', 'success');
+  toast('Đã tải scenarios.json — commit vào data/ trong repo', 'success');
+}
+function copyScenarioJSON(){
+  const text = JSON.stringify(buildScenarioFile(), null, 2);
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text)
+      .then(() => toast('Đã copy JSON — dán vào chat cho Claude', 'success'))
+      .catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
 }
 function importJSON(e){
   const file = e.target.files[0];
@@ -1131,11 +1216,7 @@ function importJSON(e){
   const reader = new FileReader();
   reader.onload = ev => {
     try {
-      const data = JSON.parse(ev.target.result);
-      if (data.format !== 'bds-loancalc') throw new Error('Không phải file BDS loan calc');
-      if (data.version !== 1) throw new Error('Phiên bản không tương thích');
-      state = {...DEFAULT_STATE, ...data.state};
-      onStateChange();
+      applyScenarioFile(parseScenarioFile(JSON.parse(ev.target.result)));
       toast('Đã nạp JSON', 'success');
     } catch(err){
       toast('File không hợp lệ: ' + err.message, 'error');
@@ -1143,6 +1224,176 @@ function importJSON(e){
   };
   reader.readAsText(file);
   e.target.value = ''; // reset
+}
+
+// ========== GITHUB SYNC ==========
+const LS_GH = 'bds_loancalc_github_v1';
+const LS_REPO_SEEN = 'bds_loancalc_repo_seen_v1'; // `updated` of the last repo file applied/saved
+const GH_DEFAULTS = {token: '', owner: 'nguyenhuahoanglong', repo: 'BDS', branch: 'master', path: 'data/scenarios.json'};
+
+function ghConfig(){
+  try { return {...GH_DEFAULTS, ...JSON.parse(localStorage.getItem(LS_GH) || '{}')}; }
+  catch(e){ return {...GH_DEFAULTS}; }
+}
+function ghStatus(msg){ document.getElementById('gh-status').textContent = msg; }
+function fmtTime(iso){
+  const d = new Date(iso);
+  return isNaN(d) ? '?' : d.toLocaleString('vi-VN');
+}
+function b64EncodeUtf8(str){
+  let bin = '';
+  new TextEncoder().encode(str).forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin);
+}
+function b64DecodeUtf8(b64){
+  const bin = atob(b64.replace(/\s/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+}
+function ghURL(cfg){
+  const path = cfg.path.split('/').map(encodeURIComponent).join('/');
+  return `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${path}`;
+}
+function ghHeaders(cfg){
+  const h = {'Accept': 'application/vnd.github+json'};
+  if (cfg.token) h['Authorization'] = 'Bearer ' + cfg.token;
+  return h;
+}
+async function ghError(res){
+  let msg = '';
+  try { msg = (await res.json()).message || ''; } catch(e){}
+  if (res.status === 401) return 'Token sai hoặc đã hết hạn';
+  if (res.status === 403) return 'Token thiếu quyền Contents: Read and write, hoặc vượt giới hạn API';
+  if (res.status === 404) return 'Không thấy repo/nhánh, hoặc token không có quyền với repo này';
+  if (res.status === 409) return 'Xung đột phiên bản, thử lại';
+  return `GitHub ${res.status} ${msg}`;
+}
+// Returns {sha, data} | null when the file does not exist. data is null if the file is not valid JSON.
+async function ghGetFile(cfg){
+  const res = await fetch(ghURL(cfg) + '?ref=' + encodeURIComponent(cfg.branch), {headers: ghHeaders(cfg), cache: 'no-store'});
+  if (res.status === 404 && cfg.token) return null;
+  if (!res.ok) throw new Error(await ghError(res));
+  const j = await res.json();
+  let data = null;
+  try { data = parseScenarioFile(JSON.parse(b64DecodeUtf8(j.content))); } catch(e){}
+  return {sha: j.sha, data};
+}
+// Without a token: GitHub API (works while the repo is public), then the copy served next to this page.
+async function fetchRepoFile(){
+  const cfg = ghConfig();
+  try {
+    const f = await ghGetFile(cfg);
+    if (f && f.data) return f;
+  } catch(e){}
+  try {
+    const res = await fetch(cfg.path, {cache: 'no-store'});
+    if (res.ok) return {sha: null, data: parseScenarioFile(await res.json())};
+  } catch(e){}
+  return null;
+}
+async function syncFromRepoOnStart(skipApply){
+  const f = await fetchRepoFile();
+  if (!f){ ghStatus('GitHub: chưa đọc được data/scenarios.json'); return; }
+  const seen = localStorage.getItem(LS_REPO_SEEN);
+  if (!skipApply && f.data.updated && f.data.updated !== seen){
+    applyScenarioFile(f.data, {backupLocal: !!localStorage.getItem(LS_AUTOSAVE)});
+    localStorage.setItem(LS_REPO_SEEN, f.data.updated);
+    toast('Đã nạp bản mới từ GitHub (' + fmtTime(f.data.updated) + ')', 'success');
+  }
+  ghStatus('GitHub: bản trên repo cập nhật lúc ' + fmtTime(f.data.updated));
+}
+async function ghLoad(){
+  const cfg = ghConfig();
+  ghStatus('GitHub: đang nạp...');
+  try {
+    const f = cfg.token ? await ghGetFile(cfg) : await fetchRepoFile();
+    if (!f) throw new Error('Chưa có file ' + cfg.path);
+    if (!f.data) throw new Error('File trên repo không phải JSON hợp lệ');
+    if (!confirm('Thay trạng thái hiện tại bằng bản trên GitHub (' + fmtTime(f.data.updated) + ')?\nPreset cùng tên sẽ bị thay, preset chỉ có ở máy này vẫn giữ.')){
+      ghStatus('GitHub: đã huỷ nạp');
+      return;
+    }
+    applyScenarioFile(f.data);
+    localStorage.setItem(LS_REPO_SEEN, f.data.updated || '');
+    ghStatus('GitHub: đã nạp bản ' + fmtTime(f.data.updated));
+    toast('Đã nạp từ GitHub', 'success');
+  } catch(e){
+    ghStatus('GitHub: lỗi nạp — ' + e.message);
+    toast('Nạp GitHub lỗi: ' + e.message, 'error');
+  }
+}
+async function ghSave(){
+  const cfg = ghConfig();
+  if (!cfg.token){ toast('Cần nhập GitHub token trước', 'error'); openGhModal(); return; }
+  const btn = document.getElementById('btn-gh-save');
+  btn.disabled = true;
+  ghStatus('GitHub: đang lưu...');
+  try {
+    const remote = await ghGetFile(cfg);
+    const seen = localStorage.getItem(LS_REPO_SEEN);
+    if (remote && (!remote.data || remote.data.updated !== seen)){
+      const when = remote.data ? fmtTime(remote.data.updated) : 'không đọc được';
+      if (!confirm('File trên GitHub đã thay đổi sau lần nạp gần nhất (bản ' + when + ', có thể do Claude sửa).\nGhi đè bằng dữ liệu trên máy này?\n\nBấm Huỷ rồi "Nạp từ GitHub" nếu muốn xem bản đó trước.')){
+        ghStatus('GitHub: đã huỷ lưu');
+        return;
+      }
+    }
+    const file = buildScenarioFile();
+    const body = {
+      message: 'loancalc: cập nhật scenarios từ trình duyệt',
+      content: b64EncodeUtf8(JSON.stringify(file, null, 2) + '\n'),
+      branch: cfg.branch
+    };
+    if (remote) body.sha = remote.sha;
+    const res = await fetch(ghURL(cfg), {method: 'PUT', headers: {...ghHeaders(cfg), 'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+    if (!res.ok) throw new Error(await ghError(res));
+    const j = await res.json();
+    localStorage.setItem(LS_REPO_SEEN, file.updated);
+    ghStatus(`GitHub: ✓ đã lưu lúc ${fmtTime(file.updated)} (commit ${j.commit.sha.slice(0, 7)})`);
+    toast('Đã lưu lên GitHub', 'success');
+  } catch(e){
+    ghStatus('GitHub: lỗi lưu — ' + e.message);
+    toast('Lưu GitHub lỗi: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+function openGhModal(){
+  const cfg = ghConfig();
+  document.getElementById('gh-token').value = cfg.token;
+  document.getElementById('gh-repo').value = cfg.owner + '/' + cfg.repo;
+  document.getElementById('gh-branch').value = cfg.branch;
+  document.getElementById('gh-path').value = cfg.path;
+  document.getElementById('gh-modal').classList.add('open');
+}
+function closeGhModal(){
+  document.getElementById('gh-modal').classList.remove('open');
+}
+function clearGhToken(){
+  const cfg = ghConfig();
+  cfg.token = '';
+  localStorage.setItem(LS_GH, JSON.stringify(cfg));
+  document.getElementById('gh-token').value = '';
+  toast('Đã xoá token khỏi trình duyệt', 'success');
+}
+async function confirmGhSettings(){
+  const [owner, repo] = document.getElementById('gh-repo').value.trim().split('/');
+  const cfg = {
+    token: document.getElementById('gh-token').value.trim(),
+    owner: owner || GH_DEFAULTS.owner,
+    repo: repo || GH_DEFAULTS.repo,
+    branch: document.getElementById('gh-branch').value.trim() || GH_DEFAULTS.branch,
+    path: document.getElementById('gh-path').value.trim().replace(/^\/+/, '') || GH_DEFAULTS.path
+  };
+  try { localStorage.setItem(LS_GH, JSON.stringify(cfg)); }
+  catch(e){ toast('Không lưu được cài đặt', 'error'); return; }
+  closeGhModal();
+  if (!cfg.token){ toast('Đã lưu cài đặt (chưa có token)', 'success'); return; }
+  try {
+    const f = await ghGetFile(cfg);
+    toast(f ? 'Token OK — đọc được ' + cfg.path : 'Token OK — file chưa có, bấm "Lưu lên GitHub" để tạo', 'success');
+  } catch(e){
+    toast('Kiểm tra token lỗi: ' + e.message, 'error');
+  }
 }
 
 // ========== SHARE URL ==========
@@ -1223,14 +1474,17 @@ function toast(msg, type='info'){
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', () => {
-  // Priority: share URL > autosave > default
-  if (!loadShareURL()){
+  // Priority: share URL > newer repo file > autosave > default
+  const fromShare = loadShareURL();
+  if (!fromShare){
     loadAutoSave();
   }
   renderPresetDropdown();
   bindInputs();
   render();
   document.getElementById('autosave-status').textContent = 'Sẵn sàng — tự lưu sau mỗi thay đổi';
+  // A newer data/scenarios.json in the repo (e.g. edited by Claude) wins over the local autosave
+  syncFromRepoOnStart(fromShare);
 });
 </script>
 </body>
